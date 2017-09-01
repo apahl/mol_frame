@@ -1,0 +1,14 @@
+.ipynb_checkpoints/
+.kdev4/
+.vscode/
+doc/_build/
+mol_frame/temp.py
+*.pkl
+*.png
+*.mrv
+*.mol
+*.pyc
+branch_info.txt
+commit_msg.txt
+snippets.txt
+tags
