@@ -4,7 +4,6 @@
 doc/_build/
 mol_frame/temp.py
 *.pkl
-*.png
 *.mrv
 *.mol
 *.pyc

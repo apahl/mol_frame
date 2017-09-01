@@ -22,7 +22,7 @@ from rdkit.Chem import AllChem as Chem
 
 from IPython.core.display import HTML
 
-from .viewers import view
+from .viewers import df_html, view
 
 try:
     from misc_tools import apl_tools
@@ -99,7 +99,7 @@ class MolFrame():
             drop.append(smiles_col)
         if len(drop) > 0:
             self.drop_cols(drop)
-        return HTML(self.data._repr_html_())
+        return HTML(df_html(self.data))
 
 
     def view(self, drop=[], keep=[], fn="molframe.html", **kwargs):

@@ -92,17 +92,9 @@ def _mol_img_tag(mol):
     return pd.Series(mol_img_tag(mol))
 
 
-def view(df, title="MolFrame", drop=[], keep=[], fn="tmp.html", **kwargs):
+def df_html(df, title="MolFrame", drop=[], keep=[], fn="tmp.html", **kwargs):
     df = df.copy()
     """Known kwargs: smiles_col, mol_col"""
-    global SHOW_WARN
-    if "local" in LIB_LOCATION.lower() and os.access("lib/bootstrap.min.js", os.R_OK):
-        pandas_tbl = templ.PANDAS_TABLE_LOCAL
-    else:
-        pandas_tbl = templ.PANDAS_TABLE_NET
-        if SHOW_WARN:
-            SHOW_WARN = False
-            print("* using online libs for dataframe browsing...")
     # ---- KW Args ----
     # smiles_col = kwargs.get("smiles_col", "Smiles")
     mol_col = kwargs.get("mol_col", "Mol")
@@ -120,6 +112,20 @@ def view(df, title="MolFrame", drop=[], keep=[], fn="tmp.html", **kwargs):
     tbl = df.to_html(formatters={mol_col: _mol_img_tag}, escape=False)
     tbl = tbl.replace("<td>0    <img", "<td><img")
     tbl = tbl.replace("dtype: object", "")
+    return tbl
+
+
+def view(df, title="MolFrame", drop=[], keep=[], fn="tmp.html", **kwargs):
+    """Known kwargs: smiles_col, mol_col"""
+    global SHOW_WARN
+    if "local" in LIB_LOCATION.lower() and os.access("lib/bootstrap.min.js", os.R_OK):
+        pandas_tbl = templ.PANDAS_TABLE_LOCAL
+    else:
+        pandas_tbl = templ.PANDAS_TABLE_NET
+        if SHOW_WARN:
+            SHOW_WARN = False
+            print("* using online libs for dataframe browsing...")
+    tbl = df_html(df, title, drop, keep, fn, **kwargs)
     tbl_list = tbl.split("\n")
     tbl_list = tbl_list[1:-1]
     tbl = "\n".join(tbl_list)
