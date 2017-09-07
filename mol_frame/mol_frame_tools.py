@@ -61,6 +61,12 @@ class MolFrame():
         else:
             self.data = pd.DataFrame(init)
         self.has_mols = False
+        self.mol_col = "Mol"
+
+
+    def _pass_properties(self, mol_frame):
+            mol_frame.has_mols = self.has_mols
+            mol_frame.mol_col = self.mol_col
 
 
     def __getitem__(self, item):
@@ -88,6 +94,18 @@ class MolFrame():
         return method
 
 
+    def new(self):
+        result = DataFrame()
+        self._pass_properties(result)
+        return result
+
+
+    def _copy_mol_frame(self):
+        result = self.new()
+        result.data = self.data.copy()
+        return result
+
+
     def print_log(self, component, add_info=""):
         if self.log:
             print_log(self.data, component, add_info)
@@ -102,9 +120,12 @@ class MolFrame():
         return HTML(df_html(self.data))
 
 
-    def view(self, drop=[], keep=[], fn="molframe.html", **kwargs):
+    def view(self, title="MolFrame", include_smiles=False,
+             drop=[], keep=[], fn="molframe.html", **kwargs):
+        """Known kwargs: smiles_col, mol_col, cpd_id_col"""
         self.add_mols()
-        return view(self.data, drop=drop, keep=keep, fn=fn, **kwargs)
+        return view(self.data, title=title, include_smiles=include_smiles,
+                    drop=drop, keep=keep, fn=fn, **kwargs)
 
 
     def head(self, n=5):
@@ -158,11 +179,17 @@ class MolFrame():
         self.data.to_pickle(fn)
 
 
+    def remove_mols(self):
+
+
+
     def add_mols(self, smiles_col="Smiles", force=False):
         def _mol_from_smiles(smi):
             return pd.Series(mol_from_smiles(smi))
+        result = _copy_mol_frame()
+        result.data = self.data.copy()
         if force or not self.has_mols:
-            self.data["Mol"] = self.data[smiles_col].apply(_mol_from_smiles)
+            self.data[self.mol_col] = self.data[smiles_col].apply(_mol_from_smiles)
             self.has_mols = True
 
 

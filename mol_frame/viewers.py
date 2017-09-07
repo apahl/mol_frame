@@ -16,8 +16,6 @@ from string import Template
 import base64
 from io import BytesIO as IO
 
-import webbrowser
-
 import pandas as pd
 pd.set_option('display.max_colwidth', -1)
 from PIL import Image, ImageChops
@@ -70,7 +68,7 @@ def b64_mol(mol, size=300):
         img = autocrop(Draw.MolToImage(mol, size=(size, size)))
     except UnicodeEncodeError:
         print(Chem.MolToSmiles(mol))
-        mol = Chem.MolFromSmiles("C")
+        mol = Chem.MolFromSmiles("*")
         img = autocrop(Draw.MolToImage(mol, size=(size, size)))
     img = make_transparent(img)
     img.save(img_file, format='PNG')
@@ -92,31 +90,39 @@ def _mol_img_tag(mol):
     return pd.Series(mol_img_tag(mol))
 
 
-def df_html(df, title="MolFrame", drop=[], keep=[], fn="tmp.html", **kwargs):
+def df_html(df, title="MolFrame", include_smiles=False,
+            drop=[], keep=[], fn="tmp.html", **kwargs):
     df = df.copy()
-    """Known kwargs: smiles_col, mol_col"""
+    """Known kwargs: smiles_col, mol_col, cpd_id_col"""
     # ---- KW Args ----
-    # smiles_col = kwargs.get("smiles_col", "Smiles")
+    smiles_col = kwargs.get("smiles_col", "Smiles")
     mol_col = kwargs.get("mol_col", "Mol")
-    if len(drop) > 0:
-        df = df.drop(drop, axis=1)
+    cpd_id_col = kwargs.get("cpd_id_col", "Compound_Id")
+    if not include_smiles:
+        drop.append(smiles_col)
     if len(keep) > 0:
         keep.append(mol_col)
         df = df[keep]
     keys = list(df.keys())
     mol_col_pos = keys.index(mol_col)
-    keys_sort = [mol_col]
     keys.pop(mol_col_pos)
+    keys_sort = [mol_col]
+    if cpd_id_col in keys:
+        cpd_id_col_pos = keys.index(cpd_id_col)
+        keys_sort.append(cpd_id_col)
+        keys.pop(cpd_id_col_pos)
     keys_sort.extend(keys)
     df = df[keys_sort]
+    if len(drop) > 0:
+        df = df.drop(drop, axis=1)
     tbl = df.to_html(formatters={mol_col: _mol_img_tag}, escape=False)
     tbl = tbl.replace("<td>0    <img", "<td><img")
     tbl = tbl.replace("dtype: object", "")
     return tbl
 
 
-def view(df, title="MolFrame", drop=[], keep=[], fn="tmp.html", **kwargs):
-    """Known kwargs: smiles_col, mol_col"""
+def view(df, title="MolFrame", include_smiles=False, drop=[], keep=[], fn="tmp.html", **kwargs):
+    """Known kwargs: smiles_col, mol_col, cpd_id_col"""
     global SHOW_WARN
     if "local" in LIB_LOCATION.lower() and os.access("lib/bootstrap.min.js", os.R_OK):
         pandas_tbl = templ.PANDAS_TABLE_LOCAL
@@ -125,7 +131,7 @@ def view(df, title="MolFrame", drop=[], keep=[], fn="tmp.html", **kwargs):
         if SHOW_WARN:
             SHOW_WARN = False
             print("* using online libs for dataframe browsing...")
-    tbl = df_html(df, title, drop, keep, fn, **kwargs)
+    tbl = df_html(df, title, include_smiles, drop, keep, fn, **kwargs)
     tbl_list = tbl.split("\n")
     tbl_list = tbl_list[1:-1]
     tbl = "\n".join(tbl_list)
