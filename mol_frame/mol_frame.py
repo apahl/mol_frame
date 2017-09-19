@@ -27,11 +27,11 @@ from .viewers import df_html, view
 try:
     from misc_tools import apl_tools
     AP_TOOLS = True
-    print("* reimported mol_frame_tools")
+    print("* reimported mol_frame")
     #: Library version
-    # VERSION = apl_tools.get_commit(__file__)
+    VERSION = apl_tools.get_commit(__file__)
     # I use this to keep track of the library versions I use in my project notebooks
-    # print("{:45s} (commit: {})".format(__name__, VERSION))
+    print("{:45s} (commit: {})".format(__name__, VERSION))
 
 except ImportError:
     AP_TOOLS = False
@@ -60,19 +60,25 @@ class MolFrame():
             self.data = pd.DataFrame()
         else:
             self.data = pd.DataFrame(init)
+        self.inplace = False
         self.has_mols = False
+        self.id_col = "Compound_Id"
+        self.smiles_col = "Smiles"
         self.mol_col = "Mol"
 
 
     def _pass_properties(self, mol_frame):
-            mol_frame.has_mols = self.has_mols
-            mol_frame.mol_col = self.mol_col
+        mol_frame.inplace = self.inplace
+        mol_frame.has_mols = self.has_mols
+        mol_frame.id_col = self.id_col
+        mol_frame.smiles_col = self.smiles_col
+        mol_frame.mol_col = self.mol_col
 
 
     def __getitem__(self, item):
         res = self.data[item]
         if isinstance(res, pd.DataFrame):
-            result = MolFrame()
+            result = self.new()
             result.data = res
             result.print_log("subset")
         else:
@@ -85,7 +91,7 @@ class MolFrame():
         def method(*args, **kwargs):
             res = getattr(self.data, name)(*args, **kwargs)
             if isinstance(res, pd.DataFrame):
-                result = MolFrame()
+                result = self.new()
                 result.data = res
                 result.print_log(name)
             else:
@@ -95,12 +101,12 @@ class MolFrame():
 
 
     def new(self):
-        result = DataFrame()
+        result = MolFrame()
         self._pass_properties(result)
         return result
 
 
-    def _copy_mol_frame(self):
+    def copy(self):
         result = self.new()
         result.data = self.data.copy()
         return result
@@ -112,9 +118,8 @@ class MolFrame():
 
 
     def show(self, include_smiles=False, drop=[], **kwargs):
-        smiles_col = kwargs.get("smiles_col", "Smiles")
         if not include_smiles:
-            drop.append(smiles_col)
+            drop.append(self.smiles_col)
         if len(drop) > 0:
             self.drop_cols(drop)
         return HTML(df_html(self.data))
@@ -122,40 +127,42 @@ class MolFrame():
 
     def view(self, title="MolFrame", include_smiles=False,
              drop=[], keep=[], fn="molframe.html", **kwargs):
-        """Known kwargs: smiles_col, mol_col, cpd_id_col"""
+        """Known kwargs: smiles_col, mol_col, id_col"""
         self.add_mols()
         return view(self.data, title=title, include_smiles=include_smiles,
-                    drop=drop, keep=keep, fn=fn, **kwargs)
+                    drop=drop, keep=keep, fn=fn,
+                    smiles_col=self.smiles_col, mol_col=self.mol_col, _id_col=self.id_col,
+                    **kwargs)
 
 
     def head(self, n=5):
         res = self.data.head(n)
-        result = MolFrame()
+        result = self.new()
         result.data = res
         result.print_log("head")
         return result
 
 
-    def drop_cols(self, cols, inplace=False):
+    def drop_cols(self, cols):
         """Drops the list of columns from the DataFrame.
         Listed columns that are not present in the DataFrame are simply ignored
         (no error is thrown)."""
-        if inplace:
+        if self.inplace:
             drop_cols(self.data, cols, inplace=True)
             self.print_log("drop cols (inplace)")
         else:
-            result = MolFrame()
+            result = self.new()
             result.data = drop_cols(self.data, cols, inplace=False)
             result.print_log("drop cols")
             return result
 
 
-    def keep_cols(self, cols, inplace=False):
-        if inplace:
+    def keep_cols(self, cols):
+        if self.inplace:
             self.data = self.data[cols]
             self.print_log("keep cols (inplace)")
         else:
-            result = MolFrame()
+            result = self.new()
             result.data = self.data[cols]
             result.print_log("keep cols")
             return result
@@ -180,17 +187,24 @@ class MolFrame():
 
 
     def remove_mols(self):
+        self.data.drop(self.mol_col, axis=1, inplace=True)
 
 
-
-    def add_mols(self, smiles_col="Smiles", force=False):
+    def add_mols(self, force=False):
         def _mol_from_smiles(smi):
             return pd.Series(mol_from_smiles(smi))
-        result = _copy_mol_frame()
-        result.data = self.data.copy()
         if force or not self.has_mols:
-            self.data[self.mol_col] = self.data[smiles_col].apply(_mol_from_smiles)
+            self.data[self.mol_col] = self.data[self.smiles_col].apply(_mol_from_smiles)
             self.has_mols = True
+
+
+    def apply_to_mol(self, lambda_func, new_col_name):
+        if self.inplace:
+            self.data[new_col_name] = self.data[self.mol_col].apply(lambda_func)
+        else:
+            result = self.copy()
+            result.data[new_col_name] = result.data[self.mol_col].apply(lambda_func)
+            return result
 
 
 def check_2d_coords(mol, force=False):

@@ -93,11 +93,11 @@ def _mol_img_tag(mol):
 def df_html(df, title="MolFrame", include_smiles=False,
             drop=[], keep=[], fn="tmp.html", **kwargs):
     df = df.copy()
-    """Known kwargs: smiles_col, mol_col, cpd_id_col"""
+    """Known kwargs: smiles_col, mol_col, id_col"""
     # ---- KW Args ----
     smiles_col = kwargs.get("smiles_col", "Smiles")
     mol_col = kwargs.get("mol_col", "Mol")
-    cpd_id_col = kwargs.get("cpd_id_col", "Compound_Id")
+    id_col = kwargs.get("id_col", "Compound_Id")
     if not include_smiles:
         drop.append(smiles_col)
     if len(keep) > 0:
@@ -107,13 +107,15 @@ def df_html(df, title="MolFrame", include_smiles=False,
     mol_col_pos = keys.index(mol_col)
     keys.pop(mol_col_pos)
     keys_sort = [mol_col]
-    if cpd_id_col in keys:
-        cpd_id_col_pos = keys.index(cpd_id_col)
-        keys_sort.append(cpd_id_col)
-        keys.pop(cpd_id_col_pos)
+    if id_col in keys:
+        id_col_pos = keys.index(id_col)
+        keys_sort.append(id_col)
+        keys.pop(id_col_pos)
     keys_sort.extend(keys)
     df = df[keys_sort]
     if len(drop) > 0:
+        # Find the keys to drop that are actually still in the df
+        drop = list(set(drop).intersection(set(df.keys())))
         df = df.drop(drop, axis=1)
     tbl = df.to_html(formatters={mol_col: _mol_img_tag}, escape=False)
     tbl = tbl.replace("<td>0    <img", "<td><img")
@@ -122,7 +124,7 @@ def df_html(df, title="MolFrame", include_smiles=False,
 
 
 def view(df, title="MolFrame", include_smiles=False, drop=[], keep=[], fn="tmp.html", **kwargs):
-    """Known kwargs: smiles_col, mol_col, cpd_id_col"""
+    """Known kwargs: smiles_col, mol_col, id_col"""
     global SHOW_WARN
     if "local" in LIB_LOCATION.lower() and os.access("lib/bootstrap.min.js", os.R_OK):
         pandas_tbl = templ.PANDAS_TABLE_LOCAL
