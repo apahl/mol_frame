@@ -48,6 +48,29 @@ JS_LIBS_NET = """<!-- jQuery -->
     <!-- Data Table -->
     <script src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js"></script>"""
 
+
+SELECTION_BTN = """<button id="show_sel">Selected Ids</button>"""
+
+SELECTION_JS = """
+    <script>
+    $(document).ready(function() {
+      var table = $('#maintable').DataTable();
+
+      $('#maintable tbody').on( 'click', 'tr', function () {
+          $(this).toggleClass('selected');
+      } );
+
+      $('#show_sel').click( function () {
+          var id_arr = [];
+          var rows = table.rows('.selected').data()
+          $.each($(rows), function(idx, row){
+              id_arr.push(row[2]);
+          });
+          alert( id_arr );
+      } );
+    } );
+    </script>"""
+
 PANDAS_TABLE = """
 <!DOCTYPE html>
 <html>
@@ -70,6 +93,7 @@ PANDAS_TABLE = """
       <div class="page-header">
           <h3>$title</h3>
       </div>
+      $selection_btn
       <table id="maintable" class="display custom" cellspacing="0" width="100%">
         $table
       </table>
@@ -84,6 +108,7 @@ PANDAS_TABLE = """
             });
         });
     </script>
+    $selection_js
   </body>
 </html>"""
 t = PreTemplate(PANDAS_TABLE)

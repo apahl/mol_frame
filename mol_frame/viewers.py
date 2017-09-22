@@ -124,7 +124,7 @@ def df_html(df, title="MolFrame", include_smiles=False,
 
 
 def view(df, title="MolFrame", include_smiles=False, drop=[], keep=[], fn="tmp.html", **kwargs):
-    """Known kwargs: smiles_col, mol_col, id_col"""
+    """Known kwargs: smiles_col, mol_col, id_col (str); selectable (bool)"""
     global SHOW_WARN
     if "local" in LIB_LOCATION.lower() and os.access("lib/bootstrap.min.js", os.R_OK):
         pandas_tbl = templ.PANDAS_TABLE_LOCAL
@@ -137,7 +137,16 @@ def view(df, title="MolFrame", include_smiles=False, drop=[], keep=[], fn="tmp.h
     tbl_list = tbl.split("\n")
     tbl_list = tbl_list[1:-1]
     tbl = "\n".join(tbl_list)
+    templ_dict = {"title": title, "table": tbl}
+
+    if kwargs.get("selectable", False):
+        templ_dict["selection_btn": templ.SELECTION_BTN]
+        templ_dict["selection_js": templ.SELECTION_JS]
+    else:
+        templ_dict["selection_btn": ""]
+        templ_dict["selection_js": ""]
+
     t = Template(pandas_tbl)
-    html = t.substitute(title=title, table=tbl)
+    html = t.substitute(templ_dict)
     write(html, fn)
     return HTML('<a href="{}">{}</a>'.format(fn, title))

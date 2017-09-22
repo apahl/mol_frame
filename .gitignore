@@ -3,6 +3,7 @@
 .vscode/
 doc/_build/
 mol_frame/temp.py
+mol_frame/resource_paths.py
 *.pkl
 *.mrv
 *.mol

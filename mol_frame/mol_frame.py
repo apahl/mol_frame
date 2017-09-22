@@ -11,6 +11,8 @@ Tools for working with MolFrame dataframes.
 """
 
 import time
+import pickle  # for b64 encoded mol objects
+import base64 as b64
 import os.path as op
 # from collections import Counter
 
@@ -23,6 +25,14 @@ from rdkit.Chem import AllChem as Chem
 from IPython.core.display import HTML
 
 from .viewers import df_html, view
+
+try:
+    from . import resource_paths as cprp
+except ImportError:
+    from . import resource_paths_templ as cprp
+    print("* Resource paths not found, stub loaded.")
+    print("  Automatic loading of resources will not work,")
+    print("  please have a look at resource_paths_templ.py")
 
 try:
     from misc_tools import apl_tools
@@ -75,8 +85,8 @@ class MolFrame():
         mol_frame.mol_col = self.mol_col
 
 
-    def __getitem__(self, item):
-        res = self.data[item]
+    def __getitem__(self, key):
+        res = self.data[key]
         if isinstance(res, pd.DataFrame):
             result = self.new()
             result.data = res
@@ -84,6 +94,10 @@ class MolFrame():
         else:
             result = res
         return result
+
+
+    def __setitem__(self, key, item):
+        self.data[key] = item
 
 
     def __getattr__(self, name):
@@ -186,6 +200,19 @@ class MolFrame():
         self.data.to_pickle(fn)
 
 
+    def write_sdf(self, fn):
+        self.add_mols()
+        writer = Chem.SDWriter(fn)
+        fields = [f for f in self.data.keys() if f != self.mol_col]
+        for _, rec in self.data.iterrows():
+            mol = rec[self.mol_col]
+            for f in fields:
+                if f in rec and rec[f]:
+                    mol.SetProp(f, str(rec[f]))
+            writer.write(mol)
+        writer.close()
+
+
     def remove_mols(self):
         self.data.drop(self.mol_col, axis=1, inplace=True)
 
@@ -238,6 +265,7 @@ def load(fn, sep="\t"):
     else:
         result.data = pd.read_csv(fn, sep=sep)
 
+    result.data = result.data.apply(pd.to_numeric, errors='ignore')
     result.print_log("load molframe")
     return result
 
@@ -263,3 +291,52 @@ def drop_cols(df, cols, inplace=False):
     else:
         result = df.drop(drop, axis=1)
         return result
+
+
+def load_resource(resource):
+    res = resource.lower()
+    glbls = globals()
+    if "smi" in res:
+        if "SMILES" not in glbls:
+            # except NameError:
+            print("- loading resource:                        (SMILES)")
+            result = MolFrame()
+            result.data = pd.read_csv(cprp.smiles_path, sep="\t")
+            result.data = result.data[cprp.smiles_cols]
+            result.data = result.data.apply(pd.to_numeric, errors='ignore')
+            global SMILES
+            SMILES = result
+    elif "struct" in res:
+        if "STRUCTURES" not in glbls:
+            # except NameError:
+            print("- loading resource:                        (STRUCTURES)")
+            result = MolFrame()
+            result.data = pd.read_csv(cprp.smiles_path, sep="\t")
+            result.data = result.data[cprp.smiles_cols]
+            result.data = result.data.apply(pd.to_numeric, errors='ignore')
+            result.data[result.mol_col] = result.data["Mol_b64"].apply(pickle.loads(b64.b64decode))
+            result.data.drop("Mol_b64", axis=1, inplace=True)
+            global STRUCT
+            STRUCT = result
+    elif "cont" in res:
+        if "CONTAINER" not in glbls:
+            print("- loading resource:                        (CONTAINER)")
+            result = pd.read_csv(cprp.container_data_path, sep="\t")
+            if len(cprp.container_data_cols) > 0:
+                result = result[cprp.container_data_cols]
+            result = result.apply(pd.to_numeric, errors='ignore')
+            global CONTAINER
+            CONTAINER = MolFrame()
+            CONTAINER.data = result
+    elif "batch" in res:
+        if "BATCH" not in glbls:
+            print("- loading resource:                        (BATCH)")
+            result = pd.read_csv(cprp.batch_data_path, sep="\t")
+            if len(cprp.batch_data_cols) > 0:
+                result[cprp.batch_data_cols]
+            result = result.apply(pd.to_numeric, errors='ignore')
+            global BATCH
+            BATCH = MolFrame()
+            BATCH.data = result
+    else:
+        raise FileNotFoundError("# unknown resource: {}".format(resource))
