@@ -140,11 +140,11 @@ def view(df, title="MolFrame", include_smiles=False, drop=[], keep=[], fn="tmp.h
     templ_dict = {"title": title, "table": tbl}
 
     if kwargs.get("selectable", False):
-        templ_dict["selection_btn": templ.SELECTION_BTN]
-        templ_dict["selection_js": templ.SELECTION_JS]
+        templ_dict["selection_btn"] = templ.SELECTION_BTN
+        templ_dict["selection_js"] = templ.SELECTION_JS
     else:
-        templ_dict["selection_btn": ""]
-        templ_dict["selection_js": ""]
+        templ_dict["selection_btn"] = ""
+        templ_dict["selection_js"] = ""
 
     t = Template(pandas_tbl)
     html = t.substitute(templ_dict)
