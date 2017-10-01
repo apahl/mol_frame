@@ -218,11 +218,17 @@ class MolFrame():
 
 
     def add_mols(self, force=False):
-        def _mol_from_smiles(smi):
-            return pd.Series(mol_from_smiles(smi))
+        # def _mol_from_smiles(smi):
+        #     return pd.Series(mol_from_smiles(smi))
         if force or not self.has_mols:
-            self.data[self.mol_col] = self.data[self.smiles_col].apply(_mol_from_smiles)
+            self.data[self.mol_col] = self.data[self.smiles_col].apply(mol_from_smiles)
             self.has_mols = True
+
+
+    def add_smiles(self, isomeric_smiles=True):
+        def _mol_to_smiles(mol):
+            return pd.Series(Chem.MolToSmiles(mol, isomericSmiles=isomeric_smiles))
+        self.data[self.smiles_col] = self.data[self.mol_col].apply(mol_from_smiles)
 
 
     def apply_to_mol(self, lambda_func, new_col_name):
@@ -232,6 +238,18 @@ class MolFrame():
             result = self.copy()
             result.data[new_col_name] = result.data[self.mol_col].apply(lambda_func)
             return result
+
+
+def get_value(str_val):
+    if not str_val:
+        return None
+    try:
+        val = float(str_val)
+        if "." not in str_val:
+            val = int(val)
+    except ValueError:
+        val = str_val
+    return val
 
 
 def check_2d_coords(mol, force=False):
@@ -267,6 +285,30 @@ def load(fn, sep="\t"):
 
     result.data = result.data.apply(pd.to_numeric, errors='ignore')
     result.print_log("load molframe")
+    return result
+
+
+def load_sdf(fn):
+    first_mol = True
+    d = {"Mol": []}
+    if isinstance(fn, str):
+        file_obj = open(fn, "rb")
+    else:
+        file_obj = fn
+    reader = Chem.ForwardSDMolSupplier(file_obj)
+    for mol in reader:
+        if first_mol:
+            first_mol = False
+            for prop in mol.GetPropNames():
+                d[prop] = []
+        # d["Smiles"].append(Chem.MolToSmiles(mol, isomericSmiles=True))
+        for prop in mol.GetPropNames():
+            if prop in d:
+                d[prop].append(get_value(mol.GetProp(prop)))
+            mol.ClearProp(prop)
+        d["Mol"] = mol
+    result = MolFrame()
+    result.data = pd.DataFrame(d)
     return result
 
 
