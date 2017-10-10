@@ -22,12 +22,10 @@ import pandas as pd
 from rdkit.Chem import AllChem as Chem
 # from rdkit.Chem import Draw
 
-from IPython.core.display import HTML
-
 from .viewers import df_html, view
 
 try:
-    from . import resource_paths as cprp
+    from . import resource_paths as cprp, nb_tools as nbt
 except ImportError:
     from . import resource_paths_templ as cprp
     print("* Resource paths not found, stub loaded.")
@@ -55,7 +53,13 @@ except ImportError:
     print("  * Avalon not available. Using RDKit for 2d coordinate generation.")
     USE_AVALON_2D = False
 
-DEBUG = True
+
+IPYTHON = nbt.is_interactive_ipython()
+
+if IPYTHON:
+    from IPython.core.display import HTML
+
+DEBUG = False
 
 
 def debug_print(txt, val):
@@ -64,7 +68,7 @@ def debug_print(txt, val):
         print("DEBUG   {:20s}".format(txt), val)
 
 
-class MolFrame():
+class MolFrame(object):
     def __init__(self, init=None, log=True):
         if init is None:
             self.data = pd.DataFrame()
@@ -75,6 +79,7 @@ class MolFrame():
         self.id_col = "Compound_Id"
         self.smiles_col = "Smiles"
         self.mol_col = "Mol"
+        self.b64_col = "Mol_b64"
 
 
     def _pass_properties(self, mol_frame):
@@ -83,6 +88,7 @@ class MolFrame():
         mol_frame.id_col = self.id_col
         mol_frame.smiles_col = self.smiles_col
         mol_frame.mol_col = self.mol_col
+        mol_frame.b64_col = self.b64_col
 
 
     def __getitem__(self, key):
@@ -90,7 +96,7 @@ class MolFrame():
         if isinstance(res, pd.DataFrame):
             result = self.new()
             result.data = res
-            result.print_log("subset")
+            print_log(result.data, "subset")
         else:
             result = res
         return result
@@ -100,18 +106,45 @@ class MolFrame():
         self.data[key] = item
 
 
+    # def __getattr__(self, name):
+    #     """Try to call undefined methods on the underlying pandas DataFrame."""
+    #     def method(*args, **kwargs):
+    #         res = getattr(self.data, name)(*args, **kwargs)
+    #         if isinstance(res, pd.DataFrame):
+    #             print("DataFrame")
+    #             result = self.new()
+    #             result.data = res
+    #             print_log(result.data, name)
+    #         else:
+    #             result = res
+    #         return result
+    #     return method
+
+
+    def print_log(self, component, add_info=""):
+        if self.log:
+            print_log(self.data, component, add_info)
+
+
     def __getattr__(self, name):
         """Try to call undefined methods on the underlying pandas DataFrame."""
-        def method(*args, **kwargs):
-            res = getattr(self.data, name)(*args, **kwargs)
-            if isinstance(res, pd.DataFrame):
-                result = self.new()
-                result.data = res
-                result.print_log(name)
-            else:
-                result = res
-            return result
-        return method
+        if hasattr(self.data, name):
+            def method(*args, **kwargs):
+                res = getattr(self.data, name)(*args, **kwargs)
+                if isinstance(res, pd.DataFrame):
+                    result = self.new()
+                    result.data = res
+                    print_log(result.data, name)
+                else:
+                    result = res
+                return result
+            return method
+        else:
+            raise AttributeError
+
+
+    def _repr_html_(self):
+        return self.data.to_html()
 
 
     def new(self):
@@ -126,11 +159,6 @@ class MolFrame():
         return result
 
 
-    def print_log(self, component, add_info=""):
-        if self.log:
-            print_log(self.data, component, add_info)
-
-
     def show(self, include_smiles=False, drop=[], **kwargs):
         if not include_smiles:
             drop.append(self.smiles_col)
@@ -141,20 +169,12 @@ class MolFrame():
 
     def view(self, title="MolFrame", include_smiles=False,
              drop=[], keep=[], fn="molframe.html", **kwargs):
-        """Known kwargs: smiles_col, mol_col, id_col"""
+        """Known kwargs: smiles_col, mol_col, id_col, selectable (bool), index (bool)"""
         self.add_mols()
         return view(self.data, title=title, include_smiles=include_smiles,
                     drop=drop, keep=keep, fn=fn,
                     smiles_col=self.smiles_col, mol_col=self.mol_col, _id_col=self.id_col,
                     **kwargs)
-
-
-    def head(self, n=5):
-        res = self.data.head(n)
-        result = self.new()
-        result.data = res
-        result.print_log("head")
-        return result
 
 
     def drop_cols(self, cols):
@@ -167,7 +187,7 @@ class MolFrame():
         else:
             result = self.new()
             result.data = drop_cols(self.data, cols, inplace=False)
-            result.print_log("drop cols")
+            print_log(result.data, "drop cols")
             return result
 
 
@@ -178,7 +198,7 @@ class MolFrame():
         else:
             result = self.new()
             result.data = self.data[cols]
-            result.print_log("keep cols")
+            print_log(result.data, "keep cols")
             return result
 
 
@@ -191,6 +211,7 @@ class MolFrame():
 
     def write_csv(self, fn, parameters=None, sep="\t"):
         result = self.data.copy()
+        result = drop_cols(result, [self.mol_col])
         if isinstance(parameters, list):
             result = result[parameters]
         result.to_csv(fn, sep=sep, index=False)
@@ -228,7 +249,15 @@ class MolFrame():
     def add_smiles(self, isomeric_smiles=True):
         def _mol_to_smiles(mol):
             return pd.Series(Chem.MolToSmiles(mol, isomericSmiles=isomeric_smiles))
-        self.data[self.smiles_col] = self.data[self.mol_col].apply(mol_from_smiles)
+        self.data[self.smiles_col] = self.data[self.mol_col].apply(_mol_to_smiles)
+
+
+    def b64_from_smiles(self):
+        def _b64_from_smiles(smiles):
+            mol = mol_from_smiles(smiles)
+            result = b64.b64encode(pickle.dumps(mol)).decode()
+            return result
+        self.data[self.b64_col] = self.data[self.smiles_col].apply(_b64_from_smiles)
 
 
     def apply_to_mol(self, lambda_func, new_col_name):
@@ -238,6 +267,39 @@ class MolFrame():
             result = self.copy()
             result.data[new_col_name] = result.data[self.mol_col].apply(lambda_func)
             return result
+
+
+    def mol_filter(self, query, add_h=False):
+        query_mol = Chem.MolFromSmiles(query)
+        if not query_mol:
+            raise ValueError("Could not generate query mol.")
+        if "[H]" in query or "#1" in query:
+            add_h = True
+            print("> explicit hydrogens turned on (add_h = True)")
+        res_l = []
+        for _, rec in self.data.iterrows():
+            if self.mol_col in rec:
+                mol = rec[self.mol_col]
+            elif self.b64_col in rec:
+                mol = pickle.loads(b64.b64decode(rec[self.b64_col]))
+            elif self.smiles_col in rec:
+                mol = Chem.MolFromSmiles(rec[self.smiles_col])
+            else:
+                raise ValueError("Neither Mol nor Mol_b64 nor Smiles column found.")
+            if not mol: continue
+            hit = False
+            if add_h:
+                mol_with_h = Chem.AddHs(mol)
+                if mol_with_h.HasSubstructMatch(query_mol):
+                    hit = True
+            else:
+                if mol.HasSubstructMatch(query_mol):
+                    hit = True
+            if hit:
+                res_l.append(rec)
+        result = self.new()
+        result.data = pd.DataFrame(res_l)
+        return result
 
 
 def get_value(str_val):
@@ -284,7 +346,7 @@ def load(fn, sep="\t"):
         result.data = pd.read_csv(fn, sep=sep)
 
     result.data = result.data.apply(pd.to_numeric, errors='ignore')
-    result.print_log("load molframe")
+    print_log(result.data, "load molframe")
     return result
 
 
@@ -306,9 +368,10 @@ def load_sdf(fn):
             if prop in d:
                 d[prop].append(get_value(mol.GetProp(prop)))
             mol.ClearProp(prop)
-        d["Mol"] = mol
+        d["Mol"].append(mol)
     result = MolFrame()
     result.data = pd.DataFrame(d)
+    result.has_mols = True
     return result
 
 

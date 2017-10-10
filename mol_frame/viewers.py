@@ -93,11 +93,12 @@ def _mol_img_tag(mol):
 def df_html(df, title="MolFrame", include_smiles=False,
             drop=[], keep=[], fn="tmp.html", **kwargs):
     df = df.copy()
-    """Known kwargs: smiles_col, mol_col, id_col"""
+    """Known kwargs: smiles_col, mol_col, id_col, index (bool)"""
     # ---- KW Args ----
     smiles_col = kwargs.get("smiles_col", "Smiles")
     mol_col = kwargs.get("mol_col", "Mol")
     id_col = kwargs.get("id_col", "Compound_Id")
+    index = kwargs.get("index", False)
     if not include_smiles:
         drop.append(smiles_col)
     if len(keep) > 0:
@@ -117,14 +118,14 @@ def df_html(df, title="MolFrame", include_smiles=False,
         # Find the keys to drop that are actually still in the df
         drop = list(set(drop).intersection(set(df.keys())))
         df = df.drop(drop, axis=1)
-    tbl = df.to_html(formatters={mol_col: _mol_img_tag}, escape=False)
+    tbl = df.to_html(formatters={mol_col: _mol_img_tag}, escape=False, index=index)
     tbl = tbl.replace("<td>0    <img", "<td><img")
     tbl = tbl.replace("dtype: object", "")
     return tbl
 
 
 def view(df, title="MolFrame", include_smiles=False, drop=[], keep=[], fn="tmp.html", **kwargs):
-    """Known kwargs: smiles_col, mol_col, id_col (str); selectable (bool)"""
+    """Known kwargs: smiles_col, mol_col, id_col (str); selectable (bool), index (bool)"""
     global SHOW_WARN
     if "local" in LIB_LOCATION.lower() and os.access("lib/bootstrap.min.js", os.R_OK):
         pandas_tbl = templ.PANDAS_TABLE_LOCAL
