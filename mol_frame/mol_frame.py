@@ -25,7 +25,7 @@ from rdkit.Chem import AllChem as Chem
 from .viewers import df_html, view
 
 try:
-    from . import resource_paths as cprp, nb_tools as nbt
+    from . import resource_paths as cprp
 except ImportError:
     from . import resource_paths_templ as cprp
     print("* Resource paths not found, stub loaded.")
@@ -54,10 +54,22 @@ except ImportError:
     USE_AVALON_2D = False
 
 
-IPYTHON = nbt.is_interactive_ipython()
+def is_interactive_ipython():
+    try:
+        get_ipython()
+        ipy = True
+        # print("> interactive IPython session.")
+    except NameError:
+        ipy = False
+    return ipy
+
+
+IPYTHON = is_interactive_ipython()
 
 if IPYTHON:
     from IPython.core.display import HTML
+    from . import nb_tools as nbt
+
 
 DEBUG = False
 
@@ -218,7 +230,18 @@ class MolFrame(object):
 
 
     def write_pkl(self, fn):
-        self.data.to_pickle(fn)
+        # self.data.to_pickle(fn)
+        pkl = [
+            self.inplace,
+            self.has_mols,
+            self.id_col,
+            self.smiles_col,
+            self.mol_col,
+            self.b64_col,
+            self.data
+        ]
+        with open(fn, "wb") as f:
+            pickle.dump(pkl, f)
 
 
     def write_sdf(self, fn):
@@ -239,25 +262,59 @@ class MolFrame(object):
 
 
     def add_mols(self, force=False):
-        # def _mol_from_smiles(smi):
-        #     return pd.Series(mol_from_smiles(smi))
+        data_len = len(self.data)
+        show_prog = IPYTHON and data_len > 5000
+        if show_prog:
+            ctr = nbt.ProgCtr()
+            pb = nbt.Progressbar()
+
+        def _mol_from_smiles(smi):
+            if show_prog:
+                ctr.inc()
+                pb.update(100 * ctr() / data_len)
+            return pd.Series(mol_from_smiles(smi))
         if force or not self.has_mols:
-            self.data[self.mol_col] = self.data[self.smiles_col].apply(mol_from_smiles)
+            self.data[self.mol_col] = self.data[self.smiles_col].apply(_mol_from_smiles)
             self.has_mols = True
+            if show_prog:
+                pb.done()
 
 
     def add_smiles(self, isomeric_smiles=True):
+        data_len = len(self.data)
+        show_prog = IPYTHON and data_len > 5000
+        if show_prog:
+            ctr = nbt.ProgCtr()
+            pb = nbt.Progressbar()
+
         def _mol_to_smiles(mol):
-            return pd.Series(Chem.MolToSmiles(mol, isomericSmiles=isomeric_smiles))
+            if show_prog:
+                ctr.inc()
+                pb.update(100 * ctr() / data_len)
+            return Chem.MolToSmiles(mol, isomericSmiles=isomeric_smiles)
         self.data[self.smiles_col] = self.data[self.mol_col].apply(_mol_to_smiles)
+        if show_prog:
+            pb.done()
 
 
     def b64_from_smiles(self):
+        data_len = len(self.data)
+        show_prog = IPYTHON and data_len > 5000
+        if show_prog:
+            ctr = nbt.ProgCtr()
+            pb = nbt.Progressbar()
+
         def _b64_from_smiles(smiles):
+            if show_prog:
+                ctr.inc()
+                pb.update(100 * ctr() / data_len)
             mol = mol_from_smiles(smiles)
             result = b64.b64encode(pickle.dumps(mol)).decode()
             return result
+
         self.data[self.b64_col] = self.data[self.smiles_col].apply(_b64_from_smiles)
+        if show_prog:
+            pb.done()
 
 
     def apply_to_mol(self, lambda_func, new_col_name):
@@ -270,6 +327,11 @@ class MolFrame(object):
 
 
     def mol_filter(self, query, add_h=False):
+        data_len = len(self.data)
+        show_prog = IPYTHON and data_len > 5000
+        if show_prog:
+            ctr = nbt.ProgCtr()
+            pb = nbt.Progressbar()
         query_mol = Chem.MolFromSmiles(query)
         if not query_mol:
             raise ValueError("Could not generate query mol.")
@@ -278,6 +340,9 @@ class MolFrame(object):
             print("> explicit hydrogens turned on (add_h = True)")
         res_l = []
         for _, rec in self.data.iterrows():
+            if show_prog:
+                ctr.inc()
+                pb.update(100 * ctr() / data_len)
             if self.mol_col in rec:
                 mol = rec[self.mol_col]
             elif self.b64_col in rec:
@@ -299,6 +364,8 @@ class MolFrame(object):
                 res_l.append(rec)
         result = self.new()
         result.data = pd.DataFrame(res_l)
+        if show_prog:
+            pb.done()
         return result
 
 
@@ -372,6 +439,20 @@ def load_sdf(fn):
     result = MolFrame()
     result.data = pd.DataFrame(d)
     result.has_mols = True
+    return result
+
+
+def load_pkl(fn):
+    with open(fn, "rb") as f:
+        pkl = pickle.load(f)
+    result = MolFrame()
+    result.inplace = pkl[0]
+    result.has_mols = pkl[1]
+    result.id_col = pkl[2]
+    result.smiles_col = pkl[3]
+    result.mol_col = pkl[4]
+    result.b64_col = pkl[5]
+    result.data = pkl[6]
     return result
 
 
