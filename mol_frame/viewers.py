@@ -32,7 +32,6 @@ from . import templ
 
 LIB_LOCATION = "local"
 SHOW_WARN = True
-print("* viewers reloaded")
 
 
 def write(text, fn):
@@ -93,12 +92,14 @@ def _mol_img_tag(mol):
 def df_html(df, title="MolFrame", include_smiles=False,
             drop=[], keep=[], fn="tmp.html", **kwargs):
     df = df.copy()
-    """Known kwargs: smiles_col, mol_col, id_col, index (bool)"""
+    """Known kwargs: smiles_col, mol_col, id_col, b64_col (str); index (bool)"""
     # ---- KW Args ----
     smiles_col = kwargs.get("smiles_col", "Smiles")
     mol_col = kwargs.get("mol_col", "Mol")
     id_col = kwargs.get("id_col", "Compound_Id")
+    b64_col = kwargs.get("b64_col", "Mol_b64")
     index = kwargs.get("index", False)
+    drop.append(b64_col)
     if not include_smiles:
         drop.append(smiles_col)
     if len(keep) > 0:
@@ -125,7 +126,7 @@ def df_html(df, title="MolFrame", include_smiles=False,
 
 
 def view(df, title="MolFrame", include_smiles=False, drop=[], keep=[], fn="tmp.html", **kwargs):
-    """Known kwargs: smiles_col, mol_col, id_col (str); selectable (bool), index (bool)"""
+    """Known kwargs: smiles_col, mol_col, id_col, b64_col (str); selectable (bool), index (bool)"""
     global SHOW_WARN
     if "local" in LIB_LOCATION.lower() and os.access("lib/bootstrap.min.js", os.R_OK):
         pandas_tbl = templ.PANDAS_TABLE_LOCAL

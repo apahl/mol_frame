@@ -35,7 +35,6 @@ except ImportError:
 try:
     from misc_tools import apl_tools
     AP_TOOLS = True
-    print("* reimported mol_frame")
     #: Library version
     VERSION = apl_tools.get_commit(__file__)
     # I use this to keep track of the library versions I use in my project notebooks
@@ -50,7 +49,7 @@ try:
     from rdkit.Avalon import pyAvalonTools as pyAv
     USE_AVALON_2D = True
 except ImportError:
-    print("  * Avalon not available. Using RDKit for 2d coordinate generation.")
+    print("* Avalon not available. Using RDKit for 2d coordinate generation.")
     USE_AVALON_2D = False
 
 
@@ -181,11 +180,12 @@ class MolFrame(object):
 
     def view(self, title="MolFrame", include_smiles=False,
              drop=[], keep=[], fn="molframe.html", **kwargs):
-        """Known kwargs: smiles_col, mol_col, id_col, selectable (bool), index (bool)"""
+        """Known kwargs: selectable (bool), index (bool)"""
         self.add_mols()
         return view(self.data, title=title, include_smiles=include_smiles,
                     drop=drop, keep=keep, fn=fn,
-                    smiles_col=self.smiles_col, mol_col=self.mol_col, _id_col=self.id_col,
+                    smiles_col=self.smiles_col, mol_col=self.mol_col, id_col=self.id_col,
+                    b64_col=self.b64_col,
                     **kwargs)
 
 
@@ -261,23 +261,21 @@ class MolFrame(object):
         self.data.drop(self.mol_col, axis=1, inplace=True)
 
 
-    def add_mols(self, force=False):
-        data_len = len(self.data)
-        show_prog = IPYTHON and data_len > 5000
-        if show_prog:
-            ctr = nbt.ProgCtr()
-            pb = nbt.Progressbar()
+    def remove_smiles_and_b64(self):
+        drop = []
+        for k in [self.smiles_col, self.b64_col]:
+            if k in self.data.keys():
+                drop.append(k)
+        self.data.drop(drop, axis=1, inplace=True)
 
-        def _mol_from_smiles(smi):
-            if show_prog:
-                ctr.inc()
-                pb.update(100 * ctr() / data_len)
-            return pd.Series(mol_from_smiles(smi))
+
+    def add_mols(self, force=False, remove_src=False):
+        self.find_mol_col()
         if force or not self.has_mols:
-            self.data[self.mol_col] = self.data[self.smiles_col].apply(_mol_from_smiles)
+            self.data[self.mol_col] = self.data[self.use_col].apply(self.mol_method)
             self.has_mols = True
-            if show_prog:
-                pb.done()
+            if remove_src:
+                self.data.drop(self.use_col, axis=1, inplace=True)
 
 
     def add_smiles(self, isomeric_smiles=True):
@@ -317,12 +315,51 @@ class MolFrame(object):
             pb.done()
 
 
-    def apply_to_mol(self, lambda_func, new_col_name):
+    def find_mol_col(self):
+        """Find a suitable mol column.
+        Either Mol, Mol_b64 or Smiles."""
+        self.use_col = None
+        if self.has_mols:
+            self.use_col = self.mol_col
+            self.mol_method = lambda x: x
+        elif self.b64_col in self.data.keys():
+            print("* using", self.b64_col)
+            self.use_col = self.b64_col
+            self.mol_method = lambda x: pickle.loads(b64.b64decode(x))
+        elif self.smiles_col in self.data.keys():
+            print("* using", self.smiles_col)
+            self.use_col = self.smiles_col
+            self.mol_method = lambda x: mol_from_smiles(x)
+        else:
+            raise KeyError("No suitable Mol column found.")
+
+
+    def apply_to_mol(self, new_col_name, lambda_func):
+        data_len = len(self.data)
+        show_prog = IPYTHON and data_len > 1000
+        self.find_mol_col()
+        if show_prog:
+            ctr = nbt.ProgCtr()
+            pb = nbt.Progressbar()
+
+        def _apply(x):
+            if show_prog:
+                ctr.inc()
+                pb.update(100 * ctr() / data_len)
+            mol = self.mol_method(x)
+            if not mol:
+                return pd.np.nan
+            return lambda_func(mol)
+
         if self.inplace:
-            self.data[new_col_name] = self.data[self.mol_col].apply(lambda_func)
+            self.data[new_col_name] = self.data[self.use_col].apply(_apply)
+            if show_prog:
+                pb.done()
         else:
             result = self.copy()
-            result.data[new_col_name] = result.data[self.mol_col].apply(lambda_func)
+            result.data[new_col_name] = result.data[self.use_col].apply(_apply)
+            if show_prog:
+                pb.done()
             return result
 
 
@@ -480,6 +517,10 @@ def drop_cols(df, cols, inplace=False):
 
 
 def load_resource(resource):
+    """Known resources:
+        SMILES,
+        STRUCTURES: containing Mol_b64 column,
+        BATCH, CONTAINER"""
     res = resource.lower()
     glbls = globals()
     if "smi" in res:
@@ -498,10 +539,8 @@ def load_resource(resource):
             print("- loading resource:                        (STRUCTURES)")
             result = MolFrame()
             result.data = pd.read_csv(cprp.smiles_path, sep="\t")
-            result.data = result.data[cprp.smiles_cols]
+            result.data = result.data[cprp.struct_cols]
             result.data = result.data.apply(pd.to_numeric, errors='ignore')
-            result.data[result.mol_col] = result.data["Mol_b64"].apply(pickle.loads(b64.b64decode))
-            result.data.drop("Mol_b64", axis=1, inplace=True)
             global STRUCT
             STRUCT = result
     elif "cont" in res:
