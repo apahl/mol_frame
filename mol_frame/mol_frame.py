@@ -376,18 +376,12 @@ class MolFrame(object):
             add_h = True
             print("> explicit hydrogens turned on (add_h = True)")
         res_l = []
+        self.find_mol_col()
         for _, rec in self.data.iterrows():
             if show_prog:
                 ctr.inc()
                 pb.update(100 * ctr() / data_len)
-            if self.mol_col in rec:
-                mol = rec[self.mol_col]
-            elif self.b64_col in rec:
-                mol = pickle.loads(b64.b64decode(rec[self.b64_col]))
-            elif self.smiles_col in rec:
-                mol = Chem.MolFromSmiles(rec[self.smiles_col])
-            else:
-                raise ValueError("Neither Mol nor Mol_b64 nor Smiles column found.")
+            mol = self.mol_method(rec[self.use_col])
             if not mol: continue
             hit = False
             if add_h:
