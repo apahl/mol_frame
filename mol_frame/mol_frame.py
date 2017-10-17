@@ -16,12 +16,14 @@ import gzip
 import sys
 import base64 as b64
 import os.path as op
+from copy import deepcopy
 # from collections import Counter
 
 import pandas as pd
 # import numpy as np
 
 from rdkit.Chem import AllChem as Chem
+from rdkit import DataStructs
 # from rdkit.Chem import Draw
 
 from .viewers import df_html, view
@@ -73,6 +75,23 @@ if IPYTHON:
 
 
 DEBUG = False
+nbits = 1024
+FPDICT = {}
+FPDICT['ecfp0'] = lambda m: Chem.GetMorganFingerprintAsBitVect(m, 0, nBits=nbits)
+FPDICT['ecfp2'] = lambda m: Chem.GetMorganFingerprintAsBitVect(m, 1, nBits=nbits)
+FPDICT['ecfp4'] = lambda m: Chem.GetMorganFingerprintAsBitVect(m, 2, nBits=nbits)
+FPDICT['ecfp6'] = lambda m: Chem.GetMorganFingerprintAsBitVect(m, 3, nBits=nbits)
+FPDICT['ecfc0'] = lambda m: Chem.GetMorganFingerprint(m, 0)
+FPDICT['ecfc2'] = lambda m: Chem.GetMorganFingerprint(m, 1)
+# FPDICT['ecfc4'] = lambda m: b64.b64encode(pickle.dumps(Chem.GetMorganFingerprint(m, 2))).decode()
+FPDICT['ecfc4'] = lambda m: Chem.GetMorganFingerprint(m, 2)
+FPDICT['ecfc6'] = lambda m: Chem.GetMorganFingerprint(m, 3)
+FPDICT['fcfp2'] = lambda m: Chem.GetMorganFingerprintAsBitVect(m, 1, useFeatures=True, nBits=nbits)
+FPDICT['fcfp4'] = lambda m: Chem.GetMorganFingerprintAsBitVect(m, 2, useFeatures=True, nBits=nbits)
+FPDICT['fcfp6'] = lambda m: Chem.GetMorganFingerprintAsBitVect(m, 3, useFeatures=True, nBits=nbits)
+FPDICT['fcfc2'] = lambda m: Chem.GetMorganFingerprint(m, 1, useFeatures=True)
+FPDICT['fcfc4'] = lambda m: Chem.GetMorganFingerprint(m, 2, useFeatures=True)
+FPDICT['fcfc6'] = lambda m: Chem.GetMorganFingerprint(m, 3, useFeatures=True)
 
 
 def debug_print(txt, val):
@@ -93,6 +112,8 @@ class MolFrame(object):
         self.smiles_col = "Smiles"
         self.mol_col = "Mol"
         self.b64_col = "Mol_b64"
+        self.fp_col = "FP_b64"
+        self.fp_name = ""  # Fingerprint method, e.g. ecfc4
 
 
     def _pass_properties(self, mol_frame):
@@ -102,6 +123,8 @@ class MolFrame(object):
         mol_frame.smiles_col = self.smiles_col
         mol_frame.mol_col = self.mol_col
         mol_frame.b64_col = self.b64_col
+        mol_frame.fp_col = self.fp_col
+        mol_frame.fp_name = self.fp_name
 
 
     def __getitem__(self, key):
@@ -240,6 +263,8 @@ class MolFrame(object):
             self.smiles_col,
             self.mol_col,
             self.b64_col,
+            self.fp_col,
+            self.fp_name,
             self.data
         ]
         with open(fn, "wb") as f:
@@ -298,6 +323,18 @@ class MolFrame(object):
         self.data[self.smiles_col] = self.data[self.mol_col].apply(_mol_to_smiles)
         if show_prog:
             pb.done()
+
+
+    def add_fp(self, fp_name="ecfc4"):
+        fp_name = fp_name.lower()
+        inplace_old = self.inplace
+        self.inplace = True
+
+        def fp_method(x):
+            return b64.b64encode(pickle.dumps(FPDICT[fp_name](x))).decode()
+        self.fp_name = fp_name
+        self.apply_to_mol(self.fp_col, fp_method)
+        self.inplace = inplace_old
 
 
     def b64_from_smiles(self):
@@ -405,6 +442,40 @@ class MolFrame(object):
         return result
 
 
+    def sim_filter(self, query, cutoff=0.75):
+        if len(self.fp_name) == 0 or self.fp_col not in self.data.keys():
+            raise KeyError("No fingerprints found. Please generate them first with add_fp().")
+        data_len = len(self.data)
+        show_prog = IPYTHON and data_len > 5000
+        if show_prog:
+            ctr = nbt.ProgCtr()
+            pb = nbt.Progressbar()
+        if isinstance(query, str):
+            query_mol = Chem.MolFromSmiles(query)
+        else:
+            query_mol = deepcopy(query)
+        if not query_mol:
+            raise ValueError("Could not generate query mol.")
+        fp_method = FPDICT[self.fp_name]
+        query_fp = fp_method(query_mol)
+        res_l = []
+        for _, rec in self.data.iterrows():
+            if show_prog:
+                ctr.inc()
+                pb.update(100 * ctr() / data_len)
+            mol_fp = pickle.loads(b64.b64decode(rec[self.fp_col]))
+            sim = DataStructs.TanimotoSimilarity(query_fp, mol_fp)
+            if sim >= cutoff:
+                rec["Sim"] = sim
+                res_l.append(rec)
+        result = self.new()
+        result.data = pd.DataFrame(res_l)
+        print_log(result.data, "sim_filter")
+        if show_prog:
+            pb.done()
+        return result
+
+
 def get_value(str_val):
     if not str_val:
         return None
@@ -497,7 +568,9 @@ def load_pkl(fn):
     result.smiles_col = pkl[3]
     result.mol_col = pkl[4]
     result.b64_col = pkl[5]
-    result.data = pkl[6]
+    result.fp_col = pkl[6]
+    result.fp_name = pkl[7]
+    result.data = pkl[8]
     return result
 
 
