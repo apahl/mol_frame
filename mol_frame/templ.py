@@ -80,7 +80,7 @@ PANDAS_TABLE = """
     §style_sheets
     <style>
       .custom {
-        font-size: 12px;
+        font-size: 14px;
       }
       .bottomcustom, .topcustom {
         font-size: 10px;
