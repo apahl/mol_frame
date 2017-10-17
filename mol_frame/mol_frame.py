@@ -12,6 +12,8 @@ Tools for working with MolFrame dataframes.
 
 import time
 import pickle  # for b64 encoded mol objects
+import gzip
+import sys
 import base64 as b64
 import os.path as op
 # from collections import Counter
@@ -223,7 +225,7 @@ class MolFrame(object):
 
     def write_csv(self, fn, parameters=None, sep="\t"):
         result = self.data.copy()
-        result = drop_cols(result, [self.mol_col])
+        result = drop_cols(result, [self.mol_col, self.b64_col])
         if isinstance(parameters, list):
             result = result[parameters]
         result.to_csv(fn, sep=sep, index=False)
@@ -245,11 +247,14 @@ class MolFrame(object):
 
 
     def write_sdf(self, fn):
-        self.add_mols()
         writer = Chem.SDWriter(fn)
-        fields = [f for f in self.data.keys() if f != self.mol_col]
+        fields = []
+        for f in self.data.keys():
+            if f != self.mol_col and f != self.b64_col:
+                fields.append(f)
+        self.find_mol_col()
         for _, rec in self.data.iterrows():
-            mol = rec[self.mol_col]
+            mol = self.mol_method(rec[self.use_col])
             for f in fields:
                 if f in rec and rec[f]:
                     mol.SetProp(f, str(rec[f]))
@@ -450,26 +455,35 @@ def load(fn, sep="\t"):
 
 def load_sdf(fn):
     first_mol = True
-    d = {"Mol": []}
+    d = {"Mol_b64": []}
+    do_close = True
     if isinstance(fn, str):
-        file_obj = open(fn, "rb")
+        if ".gz" in fn:
+            file_obj = gzip.open(fn, mode="rb")
+        else:
+            file_obj = open(fn, "rb")
     else:
         file_obj = fn
+        do_close = False
     reader = Chem.ForwardSDMolSupplier(file_obj)
-    for mol in reader:
+    for ctr, mol in enumerate(reader, 1):
+        if not mol:
+            print(ctr, file=sys.stderr)
+            continue
         if first_mol:
             first_mol = False
             for prop in mol.GetPropNames():
                 d[prop] = []
-        # d["Smiles"].append(Chem.MolToSmiles(mol, isomericSmiles=True))
         for prop in mol.GetPropNames():
             if prop in d:
                 d[prop].append(get_value(mol.GetProp(prop)))
             mol.ClearProp(prop)
-        d["Mol"].append(mol)
+        mol_b64 = b64.b64encode(pickle.dumps(mol)).decode()
+        d["Mol_b64"].append(mol_b64)
+    if do_close:
+        file_obj.close()
     result = MolFrame()
     result.data = pd.DataFrame(d)
-    result.has_mols = True
     return result
 
 
