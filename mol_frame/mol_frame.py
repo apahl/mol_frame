@@ -83,7 +83,6 @@ FPDICT['ecfp4'] = lambda m: Chem.GetMorganFingerprintAsBitVect(m, 2, nBits=nbits
 FPDICT['ecfp6'] = lambda m: Chem.GetMorganFingerprintAsBitVect(m, 3, nBits=nbits)
 FPDICT['ecfc0'] = lambda m: Chem.GetMorganFingerprint(m, 0)
 FPDICT['ecfc2'] = lambda m: Chem.GetMorganFingerprint(m, 1)
-# FPDICT['ecfc4'] = lambda m: b64.b64encode(pickle.dumps(Chem.GetMorganFingerprint(m, 2))).decode()
 FPDICT['ecfc4'] = lambda m: Chem.GetMorganFingerprint(m, 2)
 FPDICT['ecfc6'] = lambda m: Chem.GetMorganFingerprint(m, 3)
 FPDICT['fcfp2'] = lambda m: Chem.GetMorganFingerprintAsBitVect(m, 1, useFeatures=True, nBits=nbits)
@@ -140,21 +139,6 @@ class MolFrame(object):
 
     def __setitem__(self, key, item):
         self.data[key] = item
-
-
-    # def __getattr__(self, name):
-    #     """Try to call undefined methods on the underlying pandas DataFrame."""
-    #     def method(*args, **kwargs):
-    #         res = getattr(self.data, name)(*args, **kwargs)
-    #         if isinstance(res, pd.DataFrame):
-    #             print("DataFrame")
-    #             result = self.new()
-    #             result.data = res
-    #             print_log(result.data, name)
-    #         else:
-    #             result = res
-    #         return result
-    #     return method
 
 
     def print_log(self, component, add_info=""):
@@ -255,7 +239,6 @@ class MolFrame(object):
 
 
     def write_pkl(self, fn):
-        # self.data.to_pickle(fn)
         pkl = [
             self.inplace,
             self.has_mols,
