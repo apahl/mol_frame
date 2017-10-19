@@ -88,7 +88,7 @@ PANDAS_TABLE = """
     </style>
   </head>
   <body>
-
+    <div class=custom>$intro</div>
     <div class="container">
       <div class="page-header">
           <h3>$title</h3>

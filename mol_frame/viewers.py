@@ -92,14 +92,15 @@ def _mol_img_tag(mol):
 def df_html(df, title="MolFrame", include_smiles=False,
             drop=[], keep=[], fn="tmp.html", **kwargs):
     df = df.copy()
-    """Known kwargs: smiles_col, mol_col, id_col, b64_col (str); index (bool)"""
+    """Known kwargs: smiles_col, mol_col, id_col, b64_col, fp_col (str); index (bool)"""
     # ---- KW Args ----
     smiles_col = kwargs.get("smiles_col", "Smiles")
     mol_col = kwargs.get("mol_col", "Mol")
     id_col = kwargs.get("id_col", "Compound_Id")
     b64_col = kwargs.get("b64_col", "Mol_b64")
+    fp_col = kwargs.get("fp_col", "FP_b64")
     index = kwargs.get("index", False)
-    drop.append(b64_col)
+    drop.extend([b64_col, fp_col])
     if not include_smiles:
         drop.append(smiles_col)
     if len(keep) > 0:
@@ -126,7 +127,8 @@ def df_html(df, title="MolFrame", include_smiles=False,
 
 
 def view(df, title="MolFrame", include_smiles=False, drop=[], keep=[], fn="tmp.html", **kwargs):
-    """Known kwargs: smiles_col, mol_col, id_col, b64_col (str); selectable (bool), index (bool)"""
+    """Known kwargs: smiles_col, mol_col, id_col, b64_col (str); selectable (bool), index (bool),
+        intro (text)"""
     global SHOW_WARN
     if "local" in LIB_LOCATION.lower() and os.access("lib/bootstrap.min.js", os.R_OK):
         pandas_tbl = templ.PANDAS_TABLE_LOCAL
@@ -135,11 +137,12 @@ def view(df, title="MolFrame", include_smiles=False, drop=[], keep=[], fn="tmp.h
         if SHOW_WARN:
             SHOW_WARN = False
             print("* using online libs for dataframe browsing...")
+    intro = kwargs.get("intro", "")
     tbl = df_html(df, title, include_smiles, drop, keep, fn, **kwargs)
     tbl_list = tbl.split("\n")
     tbl_list = tbl_list[1:-1]
     tbl = "\n".join(tbl_list)
-    templ_dict = {"title": title, "table": tbl}
+    templ_dict = {"title": title, "table": tbl, "intro": intro}
 
     if kwargs.get("selectable", False):
         templ_dict["selection_btn"] = templ.SELECTION_BTN

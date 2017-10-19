@@ -210,7 +210,7 @@ class MolFrame(object):
         return view(self.data, title=title, include_smiles=include_smiles,
                     drop=drop, keep=keep, fn=fn,
                     smiles_col=self.smiles_col, mol_col=self.mol_col, id_col=self.id_col,
-                    b64_col=self.b64_col,
+                    b64_col=self.b64_col, fp_col=self.fp_col,
                     **kwargs)
 
 
