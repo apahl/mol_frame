@@ -359,6 +359,31 @@ class MolFrame(object):
             raise KeyError("No suitable Mol column found.")
 
 
+    def apply_to_col(self, col_name, new_col_name, lambda_func):
+        data_len = len(self.data)
+        show_prog = IPYTHON and data_len > 5000
+        if show_prog:
+            ctr = nbt.ProgCtr()
+            pb = nbt.Progressbar()
+
+        def _apply(x):
+            if show_prog:
+                ctr.inc()
+                pb.update(100 * ctr() / data_len)
+            return lambda_func(x)
+
+        if self.inplace:
+            self.data[new_col_name] = self.data[self.use_col].apply(_apply)
+            if show_prog:
+                pb.done()
+        else:
+            result = self.copy()
+            result.data[new_col_name] = result.data[col_name].apply(_apply)
+            if show_prog:
+                pb.done()
+            return result
+
+
     def apply_to_mol(self, new_col_name, lambda_func):
         data_len = len(self.data)
         show_prog = IPYTHON and data_len > 1000
