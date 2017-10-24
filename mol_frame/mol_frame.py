@@ -321,6 +321,8 @@ class MolFrame(object):
 
 
     def b64_from_smiles(self):
+        """Adds Mol_b64 column to MolFrame.
+        Operates *inplace* (!)"""
         data_len = len(self.data)
         show_prog = IPYTHON and data_len > 5000
         if show_prog:
@@ -360,6 +362,7 @@ class MolFrame(object):
 
 
     def apply_to_col(self, col_name, new_col_name, lambda_func):
+        """Returns a new copy or modifies inplace, depending on self.inplace."""
         data_len = len(self.data)
         show_prog = IPYTHON and data_len > 5000
         if show_prog:
@@ -385,6 +388,7 @@ class MolFrame(object):
 
 
     def apply_to_mol(self, new_col_name, lambda_func):
+        """Returns a new copy or modifies inplace, depending on self.inplace."""
         data_len = len(self.data)
         show_prog = IPYTHON and data_len > 1000
         self.find_mol_col()
