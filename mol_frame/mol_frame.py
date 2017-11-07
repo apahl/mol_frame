@@ -20,7 +20,7 @@ from copy import deepcopy
 # from collections import Counter
 
 import pandas as pd
-# import numpy as np
+import numpy as np
 
 from rdkit.Chem import AllChem as Chem
 from rdkit import DataStructs
@@ -196,6 +196,51 @@ class MolFrame(object):
                     smiles_col=self.smiles_col, mol_col=self.mol_col, id_col=self.id_col,
                     b64_col=self.b64_col, fp_col=self.fp_col,
                     **kwargs)
+
+
+    def merge(self, other, on=None, how="left"):
+        if on is None:
+            on = self.id_col
+        try:
+            df = other.data  # MolFrame or cpp.DataSet
+        except AttributeError:
+            df = other       # Pandas DataFrame
+        result = self.new()
+        result.data = pd.merge(self.data, df, on=on, how=how)
+        result.data = result.data.apply(pd.to_numeric, errors='ignore')
+        return result
+
+
+    def groupby(self, by=None, num_agg=["median", "mad", "count"], str_agg="join"):
+        if by is None:
+            by = self.id_col
+        df_keys = self.data.keys()
+        numeric_cols = list(self.data.select_dtypes(include=[np.number]).keys())
+        str_cols = list(set(df_keys) - set(numeric_cols))
+        # if by in numeric_cols:
+        try:
+            by_pos = numeric_cols.index(by)
+            numeric_cols.pop(by_pos)
+        except ValueError:
+            pass
+        try:
+            by_pos = str_cols.index(by)
+            str_cols.pop(by_pos)
+        except ValueError:
+            pass
+        aggregation = {}
+        for k in numeric_cols:
+            aggregation[k] = num_agg
+        for k in str_cols:
+            if str_agg == "join":
+                aggregation[k] = lambda x: "; ".join(x)
+        df = self.data.groupby(by)
+        df = df.agg(aggregation).reset_index()
+        df_cols = ["_".join(col).strip("_").replace("_<lambda>", "s") for col in df.columns.values]
+        df.columns = df_cols
+        result = self.new()
+        result.data = df
+        return result
 
 
     def keep_cols(self, cols):
@@ -615,12 +660,12 @@ def keep_cols(df, cols, inplace=False):
     Listed columns that are not present in the DataFrame are simply ignored
     (no error is thrown)."""
     if isinstance(cols, str):
-        cols = {cols}
+        cols = [cols]
     if inplace:
-        drop = set(df.keys()) - set(cols)
+        drop = list(set(df.keys()) - set(cols))
         df.drop(drop, axis=1, inplace=True)
     else:
-        keep = set(cols).intersection(df.keys())
+        keep = list(set(cols).intersection(df.keys()))
         result = df[keep]
         return result
 
