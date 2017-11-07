@@ -211,7 +211,14 @@ class MolFrame(object):
         return result
 
 
-    def groupby(self, by=None, num_agg=["median", "mad", "count"], str_agg="join"):
+    def groupby(self, by=None, num_agg=["median", "mad", "count"], str_agg="unique"):
+        """Other str_aggs: "first", "unique" """
+        def _concat(values):
+            return "; ".join(str(x) for x in values)
+
+        def _unique(values):
+            return "; ".join(set(str(x) for x in values))
+
         if by is None:
             by = self.id_col
         df_keys = self.data.keys()
@@ -231,12 +238,18 @@ class MolFrame(object):
         aggregation = {}
         for k in numeric_cols:
             aggregation[k] = num_agg
+        if str_agg == "join":
+            str_agg_method = _concat
+        elif str_agg == "first":
+            str_agg_method = "first"
+        elif str_agg == "unique":
+            str_agg_method = _unique
         for k in str_cols:
-            if str_agg == "join":
-                aggregation[k] = lambda x: "; ".join(x)
+                aggregation[k] = str_agg_method
         df = self.data.groupby(by)
         df = df.agg(aggregation).reset_index()
-        df_cols = ["_".join(col).strip("_").replace("_<lambda>", "s") for col in df.columns.values]
+        df_cols = ["_".join(col).strip("_").replace("_<lambda>", "s").replace("__unique", "s")
+                   for col in df.columns.values]
         df.columns = df_cols
         result = self.new()
         result.data = df
@@ -465,14 +478,21 @@ class MolFrame(object):
             return result
 
 
-    def id_filter(self, cpd_ids, reset_index=True):
+    def id_filter(self, cpd_ids, reset_index=True, sort_by_input=False):
         if not isinstance(cpd_ids, list):
             cpd_ids = [cpd_ids]
-        result = self.new()
-        result.data = self.data[self.data[self.id_col].isin(cpd_ids)]
+        df = self.data[self.data[self.id_col].isin(cpd_ids)]
+
         if reset_index:
-            result.data.reset_index(inplace=True)
-            result.data.drop("index", axis=1, inplace=True)
+            df.reset_index(inplace=True)
+            df.drop("index", axis=1, inplace=True)
+        if sort_by_input:
+            df["_sort"] = pd.Categorical(df[self.id_col], categories=cpd_ids, ordered=True)
+            df = df.sort_values("_sort")
+            df.drop("_sort", axis=1, inplace=False)
+        result = self.new()
+        result.data = df
+        print_log(result.data, "id filter")
         return result
 
 
@@ -721,6 +741,16 @@ def load_resource(resource):
             global DATA
             DATA = MolFrame()
             DATA.data = result
+    elif "cont" in res:
+        if "CONTAINER" not in glbls:
+            print("- loading resource:                        (CONTAINER)")
+            result = pd.read_csv(cprp.container_path, sep="\t")
+            if len(cprp.container_cols) > 0:
+                result[cprp.container_cols]
+            result = result.apply(pd.to_numeric, errors='ignore')
+            global CONTAINER
+            CONTAINER = MolFrame()
+            CONTAINER.data = result
     elif "batch" in res:
         if "BATCH" not in glbls:
             print("- loading resource:                        (BATCH)")
