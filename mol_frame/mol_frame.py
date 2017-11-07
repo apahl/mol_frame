@@ -198,6 +198,20 @@ class MolFrame(object):
                     **kwargs)
 
 
+    def keep_cols(self, cols):
+        """Keeps the list of columns of the DataFrame.
+        Listed columns that are not present in the DataFrame are simply ignored
+        (no error is thrown)."""
+        if self.inplace:
+            keep_cols(self.data, cols, inplace=True)
+            self.print_log("keep cols (inplace)")
+        else:
+            result = self.new()
+            result.data = keep_cols(self.data, cols, inplace=False)
+            print_log(result.data, "keep cols")
+            return result
+
+
     def drop_cols(self, cols):
         """Drops the list of columns from the DataFrame.
         Listed columns that are not present in the DataFrame are simply ignored
@@ -209,17 +223,6 @@ class MolFrame(object):
             result = self.new()
             result.data = drop_cols(self.data, cols, inplace=False)
             print_log(result.data, "drop cols")
-            return result
-
-
-    def keep_cols(self, cols):
-        if self.inplace:
-            self.data = self.data[cols]
-            self.print_log("keep cols (inplace)")
-        else:
-            result = self.new()
-            result.data = self.data[cols]
-            print_log(result.data, "keep cols")
             return result
 
 
@@ -417,6 +420,17 @@ class MolFrame(object):
             return result
 
 
+    def id_filter(self, cpd_ids, reset_index=True):
+        if not isinstance(cpd_ids, list):
+            cpd_ids = [cpd_ids]
+        result = self.new()
+        result.data = self.data[self.data[self.id_col].isin(cpd_ids)]
+        if reset_index:
+            result.data.reset_index(inplace=True)
+            result.data.drop("index", axis=1, inplace=True)
+        return result
+
+
     def mol_filter(self, query, add_h=False):
         data_len = len(self.data)
         show_prog = IPYTHON and data_len > 5000
@@ -596,12 +610,28 @@ def mol_from_smiles(smi, calc_2d=True):
     return mol
 
 
+def keep_cols(df, cols, inplace=False):
+    """Keep the list of columns of the DataFrame.
+    Listed columns that are not present in the DataFrame are simply ignored
+    (no error is thrown)."""
+    if isinstance(cols, str):
+        cols = {cols}
+    if inplace:
+        drop = set(df.keys()) - set(cols)
+        df.drop(drop, axis=1, inplace=True)
+    else:
+        keep = set(cols).intersection(df.keys())
+        result = df[keep]
+        return result
+
+
 def drop_cols(df, cols, inplace=False):
     """Drops the list of columns from the DataFrame.
     Listed columns that are not present in the DataFrame are simply ignored
     (no error is thrown)."""
-    df_keys = df.keys()
-    drop = [k for k in cols if k in df_keys]
+    if isinstance(cols, str):
+        cols = {cols}
+    drop = set(cols).intersection(df.keys())
     if inplace:
         df.drop(drop, axis=1, inplace=True)
     else:
@@ -636,22 +666,22 @@ def load_resource(resource):
             result.data = result.data.apply(pd.to_numeric, errors='ignore')
             global STRUCT
             STRUCT = result
-    elif "cont" in res:
-        if "CONTAINER" not in glbls:
-            print("- loading resource:                        (CONTAINER)")
+    elif "data" in res:
+        if "DATA" not in glbls:
+            print("- loading resource:                        (DATA)")
             result = pd.read_csv(cprp.container_data_path, sep="\t")
             if len(cprp.container_data_cols) > 0:
                 result = result[cprp.container_data_cols]
             result = result.apply(pd.to_numeric, errors='ignore')
-            global CONTAINER
-            CONTAINER = MolFrame()
-            CONTAINER.data = result
+            global DATA
+            DATA = MolFrame()
+            DATA.data = result
     elif "batch" in res:
         if "BATCH" not in glbls:
             print("- loading resource:                        (BATCH)")
-            result = pd.read_csv(cprp.batch_data_path, sep="\t")
-            if len(cprp.batch_data_cols) > 0:
-                result[cprp.batch_data_cols]
+            result = pd.read_csv(cprp.batch_path, sep="\t")
+            if len(cprp.batch_cols) > 0:
+                result[cprp.batch_cols]
             result = result.apply(pd.to_numeric, errors='ignore')
             global BATCH
             BATCH = MolFrame()
