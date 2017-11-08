@@ -208,6 +208,7 @@ class MolFrame(object):
         result = self.new()
         result.data = pd.merge(self.data, df, on=on, how=how)
         result.data = result.data.apply(pd.to_numeric, errors='ignore')
+        print_log(result.data, "merge")
         return result
 
 
@@ -253,6 +254,7 @@ class MolFrame(object):
         df.columns = df_cols
         result = self.new()
         result.data = df
+        print_log(df, "groupby")
         return result
 
 
@@ -530,6 +532,7 @@ class MolFrame(object):
         result.data = pd.DataFrame(res_l)
         if show_prog:
             pb.done()
+        print_log(result.data, "mol_filter")
         return result
 
 
