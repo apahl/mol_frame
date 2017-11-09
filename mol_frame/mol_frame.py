@@ -27,6 +27,8 @@ from rdkit import DataStructs
 # from rdkit.Chem import Draw
 
 from .viewers import df_html, view
+from .mol_images import b64_mol
+x = b64_mol  # make the linter shut up
 
 try:
     from . import resource_paths as cprp
@@ -55,6 +57,16 @@ try:
 except ImportError:
     print("* Avalon not available. Using RDKit for 2d coordinate generation.")
     USE_AVALON_2D = False
+
+try:
+    import holoviews as hv
+    hv.extension("bokeh")
+    from bokeh.models import HoverTool
+    HOLOVIEWS = True
+
+except ImportError:
+    HOLOVIEWS = False
+    print("* holoviews could not be import. struct_hover() is not available.")
 
 
 def is_interactive_ipython():
@@ -352,6 +364,15 @@ class MolFrame(object):
             self.has_mols = True
             if remove_src:
                 self.data.drop(self.use_col, axis=1, inplace=True)
+
+
+    def add_images(self):
+        self.find_mol_col()
+
+        def _img_method(x):
+            return "data:image/png;base64,{}".format(b64_mol(self.mol_method(x)))
+
+        self.data["Image"] = self.data[self.use_col].apply(_img_method)
 
 
     def add_smiles(self, isomeric_smiles=True):
@@ -766,3 +787,22 @@ def load_resource(resource):
             BATCH.data = result
     else:
         raise FileNotFoundError("# unknown resource: {}".format(resource))
+
+
+def struct_hover(mf):
+    """Create a structure tooltip that can be used in Holoviews.
+    Takes a MolFrame instance as parameter."""
+    mf.add_images()
+    hover = HoverTool(
+        tooltips="""
+            <div>
+                <div>
+                    <img src="@Image" alt="Mol" width="70%"><br>
+                <div>
+                <div>
+                    <span style="font-size: 12px; font-weight: bold;">@{}</span>
+                </div>
+            </div>
+        """.format(mf.id_col)
+    )
+    return hover
