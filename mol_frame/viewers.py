@@ -22,7 +22,21 @@ from IPython.core.display import HTML
 from . import templ
 from .mol_images import mol_img_tag
 
-LIB_LOCATION = "local"
+LIB_LOCATION = "local"  # other option: "net"
+# for local to work, it requires the following files to be available
+# in lib/css:
+# jquery.dataTables.min.css
+# bootstrap1.min.css
+# bootstrap2.min.css
+# in lib/:
+# jquery.min.js
+# popper.js
+# bootstrap.min.js
+# jquery.dataTables.min.js
+
+# If the files are not found, the module defaults to loading the web versions,
+# which is probably what you want anyway.
+
 SHOW_WARN = True
 
 

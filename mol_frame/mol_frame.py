@@ -7,8 +7,7 @@ MolFrame Tools
 
 *Created on Thu Aug 31, 2017 by A. Pahl*
 
-Tools for working with MolFrame dataframes.
-"""
+Tools for working with MolFrame dataframes."""
 
 import time
 import pickle  # for b64 encoded mol objects
@@ -66,7 +65,7 @@ try:
 
 except ImportError:
     HOLOVIEWS = False
-    print("* holoviews could not be import. struct_hover() is not available.")
+    print("* holoviews could not be imported. scatter() and struct_hover() are not available.")
 
 
 def is_interactive_ipython():
@@ -366,7 +365,9 @@ class MolFrame(object):
                 self.data.drop(self.use_col, axis=1, inplace=True)
 
 
-    def add_images(self):
+    def add_images(self, force=False):
+        if "Image" in self.keys() and not force:
+            return
         self.find_mol_col()
 
         def _img_method(x):
@@ -591,6 +592,26 @@ class MolFrame(object):
         return result
 
 
+    def scatter(self, x, y, colorby=None, options={}, styles={}, title="Scatter Plot", force=False):
+        """Possible options: width, height, legend_position [e.g. "top_right"]
+        Possible Styles: size, cmap [brg, Accent, rainbow, jet, flag, Wistia]"""
+        if not HOLOVIEWS:
+            print("* HoloViews not available.")
+            return None
+        hover = struct_hover(self, force=force)
+        plot_options = {"width": 800, "height": 450, "legend_position": "top_left", "tools": [hover]}
+        plot_styles = {"size": 8, "cmap": "brg"}
+        plot_options.update(options)
+        plot_styles.update(styles)
+        vdims = [y, self.id_col, "Image"]
+        if colorby is not None:
+            vdims.append(colorby)
+            plot_options["color_index"] = len(vdims)
+        opts = {'Scatter': {'plot': plot_options, "style": plot_styles}}
+        scatter_plot = hv.Scatter(self.data, x, vdims=vdims, label=title)
+        return scatter_plot(opts)
+
+
 def get_value(str_val):
     if not str_val:
         return None
@@ -789,10 +810,13 @@ def load_resource(resource):
         raise FileNotFoundError("# unknown resource: {}".format(resource))
 
 
-def struct_hover(mf):
+def struct_hover(mf, force=False):
     """Create a structure tooltip that can be used in Holoviews.
     Takes a MolFrame instance as parameter."""
-    mf.add_images()
+    if not HOLOVIEWS:
+        print("* HoloViews not available.")
+        return None
+    mf.add_images(force=force)
     hover = HoverTool(
         tooltips="""
             <div>
