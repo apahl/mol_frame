@@ -191,11 +191,13 @@ class MolFrame(object):
 
 
     def show(self, include_smiles=False, drop=[], **kwargs):
+        self.add_mols()
+        tmp = self.copy()
         if not include_smiles:
-            drop.append(self.smiles_col)
+            drop.append(tmp.smiles_col)
         if len(drop) > 0:
-            self.drop_cols(drop)
-        return HTML(df_html(self.data))
+            tmp.drop_cols(drop)
+        return HTML(df_html(tmp.data))
 
 
     def view(self, title="MolFrame", include_smiles=False,
@@ -260,7 +262,7 @@ class MolFrame(object):
                 aggregation[k] = str_agg_method
         df = self.data.groupby(by)
         df = df.agg(aggregation).reset_index()
-        df_cols = ["_".join(col).strip("_").replace("_<lambda>", "s").replace("__unique", "s")
+        df_cols = ["_".join(col).strip("_").replace("_<lambda>", "").replace("__unique", "")
                    for col in df.columns.values]
         df.columns = df_cols
         result = self.new()

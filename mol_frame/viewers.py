@@ -96,7 +96,7 @@ def view(df, title="MolFrame", include_smiles=False, drop=[], keep=[], fn="tmp.h
         pandas_tbl = templ.PANDAS_TABLE_NET
         if SHOW_WARN:
             SHOW_WARN = False
-            print("* using online libs for dataframe browsing...")
+            print("* using online libs for MolFrame browsing...")
     intro = kwargs.get("intro", "")
     tbl = df_html(df, title, include_smiles, drop, keep, fn, **kwargs)
     tbl_list = tbl.split("\n")

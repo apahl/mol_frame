@@ -1,4 +1,5 @@
 .ipynb_checkpoints/
+tutorials/.ipynb_checkpoints
 .kdev4/
 .vscode/
 doc/_build/
