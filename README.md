@@ -25,7 +25,7 @@ The code is written and tested on Ubuntu 17.04 / 17.10 and Python 3.6 and is int
 The main class is the MolFrame, which is a wrapper around a Pandas dataframe, exposing all DataFrame methods and extending it with some chemical functionality from the RDKit.  
 The underlying DataFrame is contained in the MolFrame.data object and always be accessed directly, if necessary.
 
-See the accompanying [Tutorial](tutorials/tutorial1.pynb) notebook for further examples.
+See the accompanying [Tutorial](tutorials/tutorial1.ipynb) notebook for further examples.
 
 ## Installation
 After installing the requirements, clone this repo, then the module can be used by including the project's base directory (mol_frame) in Python's import path (I actually prefer this to using setuptools, because a simple git pull will get you the newest version).
