@@ -64,7 +64,7 @@ SELECTION_JS = """
           var id_arr = [];
           var rows = table.rows('.selected').data()
           $.each($(rows), function(idx, row){
-              id_arr.push(row[2]);
+              id_arr.push(row[1]);
           });
           alert( id_arr );
       } );
