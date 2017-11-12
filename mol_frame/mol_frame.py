@@ -212,6 +212,7 @@ class MolFrame(object):
 
 
     def merge(self, other, on=None, how="left"):
+        """Using pd.merge()"""
         if on is None:
             on = self.id_col
         try:
@@ -226,7 +227,7 @@ class MolFrame(object):
 
 
     def groupby(self, by=None, num_agg=["median", "mad", "count"], str_agg="unique"):
-        """Other str_aggs: "first", "unique" """
+        """Other str_aggs: "first", "unique"."""
         def _concat(values):
             return "; ".join(str(x) for x in values)
 
@@ -347,10 +348,14 @@ class MolFrame(object):
 
 
     def remove_mols(self):
+        """Remove the mol objects from the MolFrame.
+        Always operates in-place!"""
         self.data.drop(self.mol_col, axis=1, inplace=True)
 
 
     def remove_smiles_and_b64(self):
+        """Remove the Smiles and Mol_b64 columns from the MolFrame, if present.
+        Always operates in-place!"""
         drop = []
         for k in [self.smiles_col, self.b64_col]:
             if k in self.data.keys():
@@ -359,6 +364,9 @@ class MolFrame(object):
 
 
     def add_mols(self, force=False, remove_src=False):
+        """Adds mol objects to the MolFrame.
+        Tries to use the Mol_b64 column. If that is not present, it uses Smiles.
+        Always operates in-place!"""
         self.find_mol_col()
         if force or not self.has_mols:
             self.data[self.mol_col] = self.data[self.use_col].apply(self.mol_method)
@@ -368,6 +376,8 @@ class MolFrame(object):
 
 
     def add_images(self, force=False):
+        """Adds ań Image column to the MolFrame, used for structure tooltips in plotting.
+        Always operates in-place!"""
         if "Image" in self.keys() and not force:
             return
         self.find_mol_col()
@@ -379,6 +389,8 @@ class MolFrame(object):
 
 
     def add_smiles(self, isomeric_smiles=True):
+        """Adds Smiles column from mol objects to the MolFrame.
+        Always operates in-place!"""
         data_len = len(self.data)
         show_prog = IPYTHON and data_len > 5000
         if show_prog:
@@ -396,6 +408,11 @@ class MolFrame(object):
 
 
     def add_fp(self, fp_name="ecfc4"):
+        """Adds a fingerprint column to the MolFrame.
+        The available fingerprints can be viewed by:
+        >>> print(mf.FDICT.keys())
+
+        Always operates in-place!"""
         fp_name = fp_name.lower()
         inplace_old = self.inplace
         self.inplace = True
@@ -409,7 +426,7 @@ class MolFrame(object):
 
     def b64_from_smiles(self):
         """Adds Mol_b64 column to MolFrame.
-        Operates *inplace* (!)"""
+        Always operates in-place!"""
         data_len = len(self.data)
         show_prog = IPYTHON and data_len > 5000
         if show_prog:
@@ -449,7 +466,9 @@ class MolFrame(object):
 
 
     def apply_to_col(self, col_name, new_col_name, lambda_func):
-        """Returns a new copy or modifies inplace, depending on self.inplace."""
+        """Applies a func to a column in the MolFrame.
+        A wrapper around pd.apply to enable progress bars.
+        Returns a new copy or modifies inplace, depending on self.inplace."""
         data_len = len(self.data)
         show_prog = IPYTHON and data_len > 5000
         if show_prog:
@@ -475,7 +494,9 @@ class MolFrame(object):
 
 
     def apply_to_mol(self, new_col_name, lambda_func):
-        """Returns a new copy or modifies inplace, depending on self.inplace."""
+        """Applies a func to the Mol object, which is generated on-the-fly, if necessary.
+        Displays a progress bar for longer operations.
+        Returns a new copy or modifies inplace, depending on self.inplace."""
         data_len = len(self.data)
         show_prog = IPYTHON and data_len > 1000
         self.find_mol_col()
@@ -505,6 +526,9 @@ class MolFrame(object):
 
 
     def id_filter(self, cpd_ids, reset_index=True, sort_by_input=False):
+        """Returns a new MolFrame instance consisting only of the give cpd_ids.
+        When `sort_by_input == True`, the lines in the new MolFrame will have the same order
+        as the given cpd_ids."""
         if not isinstance(cpd_ids, list):
             cpd_ids = [cpd_ids]
         df = self.data[self.data[self.id_col].isin(cpd_ids)]
@@ -523,6 +547,8 @@ class MolFrame(object):
 
 
     def mol_filter(self, query, add_h=False):
+        """Substructure filter. Returns a new MolFrame instance.
+        `query` has to be a Smiles string."""
         data_len = len(self.data)
         show_prog = IPYTHON and data_len > 5000
         if show_prog:
@@ -561,6 +587,8 @@ class MolFrame(object):
 
 
     def sim_filter(self, query, cutoff=0.75):
+        """Similarity filter. Returns a new MolFrame instance.
+        Add a suitable fingerprint once with addf_fps(), then give a reference fingerprint as query."""
         if len(self.fp_name) == 0 or self.fp_col not in self.data.keys():
             raise KeyError("No fingerprints found. Please generate them first with add_fp().")
         data_len = len(self.data)
@@ -596,7 +624,7 @@ class MolFrame(object):
 
     def scatter(self, x, y, colorby=None, options={}, styles={}, title="Scatter Plot", force=False):
         """Possible options: width, height, legend_position [e.g. "top_right"]
-        Possible Styles: size, cmap [brg, Accent, rainbow, jet, flag, Wistia]"""
+        Possible styles: size, cmap [brg, Accent, rainbow, jet, flag, Wistia]"""
         if not HOLOVIEWS:
             print("* HoloViews not available.")
             return None
@@ -615,6 +643,7 @@ class MolFrame(object):
 
 
 def get_value(str_val):
+    """convert a string into float or int, if possible."""
     if not str_val:
         return None
     try:
@@ -663,11 +692,12 @@ def load(fn, sep="\t"):
 
 
 def load_sdf(fn):
+    """Create a MolFrame instance from an SD file (can be gzipped (fn ends with `.gz`))."""
     first_mol = True
     d = {"Mol_b64": []}
     do_close = True
     if isinstance(fn, str):
-        if ".gz" in fn:
+        if fn.endswith(".gz"):
             file_obj = gzip.open(fn, mode="rb")
         else:
             file_obj = open(fn, "rb")
@@ -713,6 +743,8 @@ def load_pkl(fn):
 
 
 def mol_from_smiles(smi, calc_2d=True):
+    """Generate a mol from Smiles.
+    For invalid Smiles it generates a No-structure."""
     mol = Chem.MolFromSmiles(smi)
     if not mol:
         mol = Chem.MolFromSmiles("*")
