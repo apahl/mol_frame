@@ -4,8 +4,9 @@ Working with Pandas DataFrames that can handle chemical structures.
 
 ## Features:
 Output as sortable and optionally selectable HTML Tables:
-![HTML Tables](res/molframe.png)
-(this is an extension of bluenote10's NimData [html browser](https://github.com/bluenote10/NimData/blob/master/src/nimdata/html.nim) which uses JQuery Datatables.)
+![HTML Tables](res/molframe.png)  
+(this is an extension of bluenote10's NimData [html browser](https://github.com/bluenote10/NimData/blob/master/src/nimdata/html.nim) 
+which uses JQuery Datatables.)
 
 Interactive HoloViews plots with structure tooltips:
 ![Scatter Plot](res/scatter_test.png)

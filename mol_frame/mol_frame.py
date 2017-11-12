@@ -111,6 +111,7 @@ def debug_print(txt, val):
 
 
 class MolFrame(object):
+    """A wrapper class around Pandas DataFrame with added structure handling capabilities."""
     def __init__(self, init=None, log=True):
         if init is None:
             self.data = pd.DataFrame()
