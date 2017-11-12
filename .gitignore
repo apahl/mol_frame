@@ -2,10 +2,9 @@
 tutorials/.ipynb_checkpoints
 .kdev4/
 .vscode/
-doc/_build/
+doc/_build/doctrees
 doc/_static
 doc/_templates
-
 mol_frame/temp.py
 mol_frame/resource_paths.py
 *.pkl

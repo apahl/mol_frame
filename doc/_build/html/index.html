@@ -1,0 +1,333 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Welcome to MolFrame’s documentation! &#8212; MolFrame 0.5.0 documentation</title>
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.5.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="#">MolFrame 0.5.0 documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="welcome-to-molframe-s-documentation">
+<h1>Welcome to MolFrame’s documentation!<a class="headerlink" href="#welcome-to-molframe-s-documentation" title="Permalink to this headline">¶</a></h1>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></li>
+<li><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></li>
+<li><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></li>
+</ul>
+<span class="target" id="module-mol_frame.mol_frame"></span><div class="section" id="molframe-tools">
+<h2>MolFrame Tools<a class="headerlink" href="#molframe-tools" title="Permalink to this headline">¶</a></h2>
+<p><em>Created on Thu Aug 31, 2017 by A. Pahl</em></p>
+<p>Tools for working with MolFrame dataframes.</p>
+<dl class="class">
+<dt id="mol_frame.mol_frame.MolFrame">
+<em class="property">class </em><code class="descclassname">mol_frame.mol_frame.</code><code class="descname">MolFrame</code><span class="sig-paren">(</span><em>init=None</em>, <em>log=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#MolFrame"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.MolFrame" title="Permalink to this definition">¶</a></dt>
+<dd><p>A wrapper class around Pandas DataFrame with added structure handling capabilities.</p>
+<dl class="method">
+<dt id="mol_frame.mol_frame.MolFrame.__getattr__">
+<code class="descname">__getattr__</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#MolFrame.__getattr__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.MolFrame.__getattr__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Try to call undefined methods on the underlying pandas DataFrame.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="mol_frame.mol_frame.MolFrame.__weakref__">
+<code class="descname">__weakref__</code><a class="headerlink" href="#mol_frame.mol_frame.MolFrame.__weakref__" title="Permalink to this definition">¶</a></dt>
+<dd><p>list of weak references to the object (if defined)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mol_frame.mol_frame.MolFrame.add_fp">
+<code class="descname">add_fp</code><span class="sig-paren">(</span><em>fp_name='ecfc4'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#MolFrame.add_fp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.MolFrame.add_fp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a fingerprint column to the MolFrame.
+The available fingerprints can be viewed by:
+&gt;&gt;&gt; print(mf.FDICT.keys())</p>
+<p>Always operates in-place!</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mol_frame.mol_frame.MolFrame.add_images">
+<code class="descname">add_images</code><span class="sig-paren">(</span><em>force=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#MolFrame.add_images"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.MolFrame.add_images" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds ań Image column to the MolFrame, used for structure tooltips in plotting.
+Always operates in-place!</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mol_frame.mol_frame.MolFrame.add_mols">
+<code class="descname">add_mols</code><span class="sig-paren">(</span><em>force=False</em>, <em>remove_src=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#MolFrame.add_mols"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.MolFrame.add_mols" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds mol objects to the MolFrame.
+Tries to use the Mol_b64 column. If that is not present, it uses Smiles.
+Always operates in-place!</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mol_frame.mol_frame.MolFrame.add_smiles">
+<code class="descname">add_smiles</code><span class="sig-paren">(</span><em>isomeric_smiles=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#MolFrame.add_smiles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.MolFrame.add_smiles" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds Smiles column from mol objects to the MolFrame.
+Always operates in-place!</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mol_frame.mol_frame.MolFrame.apply_to_col">
+<code class="descname">apply_to_col</code><span class="sig-paren">(</span><em>col_name</em>, <em>new_col_name</em>, <em>lambda_func</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#MolFrame.apply_to_col"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.MolFrame.apply_to_col" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies a func to a column in the MolFrame.
+A wrapper around pd.apply to enable progress bars.
+Returns a new copy or modifies inplace, depending on self.inplace.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mol_frame.mol_frame.MolFrame.apply_to_mol">
+<code class="descname">apply_to_mol</code><span class="sig-paren">(</span><em>new_col_name</em>, <em>lambda_func</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#MolFrame.apply_to_mol"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.MolFrame.apply_to_mol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies a func to the Mol object, which is generated on-the-fly, if necessary.
+Displays a progress bar for longer operations.
+Returns a new copy or modifies inplace, depending on self.inplace.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mol_frame.mol_frame.MolFrame.b64_from_smiles">
+<code class="descname">b64_from_smiles</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#MolFrame.b64_from_smiles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.MolFrame.b64_from_smiles" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds Mol_b64 column to MolFrame.
+Always operates in-place!</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mol_frame.mol_frame.MolFrame.drop_cols">
+<code class="descname">drop_cols</code><span class="sig-paren">(</span><em>cols</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#MolFrame.drop_cols"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.MolFrame.drop_cols" title="Permalink to this definition">¶</a></dt>
+<dd><p>Drops the list of columns from the DataFrame.
+Listed columns that are not present in the DataFrame are simply ignored
+(no error is thrown).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mol_frame.mol_frame.MolFrame.find_mol_col">
+<code class="descname">find_mol_col</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#MolFrame.find_mol_col"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.MolFrame.find_mol_col" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find a suitable mol column.
+Either Mol, Mol_b64 or Smiles.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mol_frame.mol_frame.MolFrame.groupby">
+<code class="descname">groupby</code><span class="sig-paren">(</span><em>by=None, num_agg=['median', 'mad', 'count'], str_agg='unique'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#MolFrame.groupby"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.MolFrame.groupby" title="Permalink to this definition">¶</a></dt>
+<dd><p>Other str_aggs: “first”, “unique”.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mol_frame.mol_frame.MolFrame.id_filter">
+<code class="descname">id_filter</code><span class="sig-paren">(</span><em>cpd_ids</em>, <em>reset_index=True</em>, <em>sort_by_input=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#MolFrame.id_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.MolFrame.id_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a new MolFrame instance consisting only of the give cpd_ids.
+When <cite>sort_by_input == True</cite>, the lines in the new MolFrame will have the same order
+as the given cpd_ids.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mol_frame.mol_frame.MolFrame.keep_cols">
+<code class="descname">keep_cols</code><span class="sig-paren">(</span><em>cols</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#MolFrame.keep_cols"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.MolFrame.keep_cols" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keeps the list of columns of the DataFrame.
+Listed columns that are not present in the DataFrame are simply ignored
+(no error is thrown).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mol_frame.mol_frame.MolFrame.load">
+<code class="descname">load</code><span class="sig-paren">(</span><em>fn</em>, <em>sep='\t'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#MolFrame.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.MolFrame.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read one or multiple result files and concatenate them into one MolFrame.
+<cite>fn</cite> is a single filename (string) or a list of filenames.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mol_frame.mol_frame.MolFrame.merge">
+<code class="descname">merge</code><span class="sig-paren">(</span><em>other</em>, <em>on=None</em>, <em>how='left'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#MolFrame.merge"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.MolFrame.merge" title="Permalink to this definition">¶</a></dt>
+<dd><p>Using pd.merge()</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mol_frame.mol_frame.MolFrame.mol_filter">
+<code class="descname">mol_filter</code><span class="sig-paren">(</span><em>query</em>, <em>add_h=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#MolFrame.mol_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.MolFrame.mol_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Substructure filter. Returns a new MolFrame instance.
+<cite>query</cite> has to be a Smiles string.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mol_frame.mol_frame.MolFrame.remove_mols">
+<code class="descname">remove_mols</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#MolFrame.remove_mols"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.MolFrame.remove_mols" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove the mol objects from the MolFrame.
+Always operates in-place!</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mol_frame.mol_frame.MolFrame.remove_smiles_and_b64">
+<code class="descname">remove_smiles_and_b64</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#MolFrame.remove_smiles_and_b64"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.MolFrame.remove_smiles_and_b64" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove the Smiles and Mol_b64 columns from the MolFrame, if present.
+Always operates in-place!</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mol_frame.mol_frame.MolFrame.scatter">
+<code class="descname">scatter</code><span class="sig-paren">(</span><em>x</em>, <em>y</em>, <em>colorby=None</em>, <em>options={}</em>, <em>styles={}</em>, <em>title='Scatter Plot'</em>, <em>force=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#MolFrame.scatter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.MolFrame.scatter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Possible options: width, height, legend_position [e.g. “top_right”]
+Possible styles: size, cmap [brg, Accent, rainbow, jet, flag, Wistia]</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mol_frame.mol_frame.MolFrame.sim_filter">
+<code class="descname">sim_filter</code><span class="sig-paren">(</span><em>query</em>, <em>cutoff=0.75</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#MolFrame.sim_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.MolFrame.sim_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Similarity filter. Returns a new MolFrame instance.
+Add a suitable fingerprint once with addf_fps(), then give a reference fingerprint as query.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mol_frame.mol_frame.MolFrame.view">
+<code class="descname">view</code><span class="sig-paren">(</span><em>title='MolFrame'</em>, <em>include_smiles=False</em>, <em>drop=[]</em>, <em>keep=[]</em>, <em>fn='molframe.html'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#MolFrame.view"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.MolFrame.view" title="Permalink to this definition">¶</a></dt>
+<dd><p>Known kwargs: selectable (bool), index (bool)</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt id="mol_frame.mol_frame.VERSION">
+<code class="descclassname">mol_frame.mol_frame.</code><code class="descname">VERSION</code><em class="property"> = '300af13 ( 2017-11-12 14:44:47 )'</em><a class="headerlink" href="#mol_frame.mol_frame.VERSION" title="Permalink to this definition">¶</a></dt>
+<dd><p>Library version</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mol_frame.mol_frame.check_2d_coords">
+<code class="descclassname">mol_frame.mol_frame.</code><code class="descname">check_2d_coords</code><span class="sig-paren">(</span><em>mol</em>, <em>force=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#check_2d_coords"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.check_2d_coords" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if a mol has 2D coordinates and if not, calculate them.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mol_frame.mol_frame.drop_cols">
+<code class="descclassname">mol_frame.mol_frame.</code><code class="descname">drop_cols</code><span class="sig-paren">(</span><em>df</em>, <em>cols</em>, <em>inplace=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#drop_cols"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.drop_cols" title="Permalink to this definition">¶</a></dt>
+<dd><p>Drops the list of columns from the DataFrame.
+Listed columns that are not present in the DataFrame are simply ignored
+(no error is thrown).</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mol_frame.mol_frame.get_value">
+<code class="descclassname">mol_frame.mol_frame.</code><code class="descname">get_value</code><span class="sig-paren">(</span><em>str_val</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#get_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.get_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>convert a string into float or int, if possible.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mol_frame.mol_frame.keep_cols">
+<code class="descclassname">mol_frame.mol_frame.</code><code class="descname">keep_cols</code><span class="sig-paren">(</span><em>df</em>, <em>cols</em>, <em>inplace=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#keep_cols"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.keep_cols" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keep the list of columns of the DataFrame.
+Listed columns that are not present in the DataFrame are simply ignored
+(no error is thrown).</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mol_frame.mol_frame.load">
+<code class="descclassname">mol_frame.mol_frame.</code><code class="descname">load</code><span class="sig-paren">(</span><em>fn</em>, <em>sep='\t'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read one or multiple result files and concatenate them into one MolFrame.
+<cite>fn</cite> is a single filename (string) or a list of filenames.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mol_frame.mol_frame.load_resource">
+<code class="descclassname">mol_frame.mol_frame.</code><code class="descname">load_resource</code><span class="sig-paren">(</span><em>resource</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#load_resource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.load_resource" title="Permalink to this definition">¶</a></dt>
+<dd><p>Known resources:
+SMILES,
+STRUCTURES: containing Mol_b64 column,
+BATCH, CONTAINER</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mol_frame.mol_frame.load_sdf">
+<code class="descclassname">mol_frame.mol_frame.</code><code class="descname">load_sdf</code><span class="sig-paren">(</span><em>fn</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#load_sdf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.load_sdf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a MolFrame instance from an SD file (can be gzipped (fn ends with <cite>.gz</cite>)).</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mol_frame.mol_frame.mol_from_smiles">
+<code class="descclassname">mol_frame.mol_frame.</code><code class="descname">mol_from_smiles</code><span class="sig-paren">(</span><em>smi</em>, <em>calc_2d=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#mol_from_smiles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.mol_from_smiles" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a mol from Smiles.
+For invalid Smiles it generates a No-structure.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mol_frame.mol_frame.struct_hover">
+<code class="descclassname">mol_frame.mol_frame.</code><code class="descname">struct_hover</code><span class="sig-paren">(</span><em>mf</em>, <em>force=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#struct_hover"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.struct_hover" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a structure tooltip that can be used in Holoviews.
+Takes a MolFrame instance as parameter.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="#">MolFrame 0.5.0 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Axel Pahl.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.5.
+    </div>
+  </body>
+</html>
