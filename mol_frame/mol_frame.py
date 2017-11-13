@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-##############
-MolFrame Tools
-##############
+########
+MolFrame
+########
 
 *Created on Thu Aug 31, 2017 by A. Pahl*
 
@@ -203,7 +203,7 @@ class MolFrame(object):
 
     def view(self, title="MolFrame", include_smiles=False,
              drop=[], keep=[], fn="molframe.html", **kwargs):
-        """Known kwargs: selectable (bool), index (bool)"""
+        """Known kwargs: selectable (bool), index (bool), intro (optional HTML text that will be inserted above the table)"""
         self.add_mols()
         return view(self.data, title=title, include_smiles=include_smiles,
                     drop=drop, keep=keep, fn=fn,
@@ -303,7 +303,7 @@ class MolFrame(object):
 
     def load(self, fn, sep="\t"):
         """Read one or multiple result files and concatenate them into one MolFrame.
-        `fn` is a single filename (string) or a list of filenames."""
+        ``fn`` is a single filename (string) or a list of filenames."""
         self.data = load(fn, sep=sep).data
         self.print_log("load data")
 
@@ -527,8 +527,8 @@ class MolFrame(object):
 
 
     def id_filter(self, cpd_ids, reset_index=True, sort_by_input=False):
-        """Returns a new MolFrame instance consisting only of the give cpd_ids.
-        When `sort_by_input == True`, the lines in the new MolFrame will have the same order
+        """Returns a new MolFrame instance consisting only of the given cpd_ids.
+        When ``sort_by_input == True``, the lines in the new MolFrame will have the same order
         as the given cpd_ids."""
         if not isinstance(cpd_ids, list):
             cpd_ids = [cpd_ids]
@@ -549,7 +549,7 @@ class MolFrame(object):
 
     def mol_filter(self, query, add_h=False):
         """Substructure filter. Returns a new MolFrame instance.
-        `query` has to be a Smiles string."""
+        ``query`` has to be a Smiles string."""
         data_len = len(self.data)
         show_prog = IPYTHON and data_len > 5000
         if show_prog:
@@ -680,7 +680,7 @@ def print_log(df, component, add_info=""):
 
 def load(fn, sep="\t"):
     """Read one or multiple result files and concatenate them into one MolFrame.
-    `fn` is a single filename (string) or a list of filenames."""
+    ``fn`` is a single filename (string) or a list of filenames."""
     result = MolFrame()
     if isinstance(fn, list):
         result.data = pd.concat((pd.read_csv(f, sep=sep) for f in fn))
@@ -693,7 +693,7 @@ def load(fn, sep="\t"):
 
 
 def load_sdf(fn):
-    """Create a MolFrame instance from an SD file (can be gzipped (fn ends with `.gz`))."""
+    """Create a MolFrame instance from an SD file (can be gzipped (fn ends with ``.gz``))."""
     first_mol = True
     d = {"Mol_b64": []}
     do_close = True

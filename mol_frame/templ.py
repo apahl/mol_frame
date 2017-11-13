@@ -116,3 +116,35 @@ d = {"style_sheets": STYLESHEETS_LOCAL, "js_libs": JS_LIBS_LOCAL}
 PANDAS_TABLE_LOCAL = t.substitute(d)
 d = {"style_sheets": STYLESHEETS_NET, "js_libs": JS_LIBS_NET}
 PANDAS_TABLE_NET = t.substitute(d)
+
+JSME_FORM = '''<script type="text/javascript" src="{jsme_loc}/jsme/jsme.nocache.js"></script>
+<script type="text/javascript">
+
+function jsmeOnLoad() {{
+    //arguments: HTML id, width, height (must be string not number!)
+    jsmeApplet{ts} = new JSApplet.JSME("appletContainer{ts}", "380px", "340px", {{
+                     //optional parameters
+                     "options" : "query,hydrogens"
+    }});
+}}
+
+function onSubmit() {{
+    var drawing = jsmeApplet{ts}.molFile();
+    // document.getElementById('jsme_smiles{ts}').value = drawing;
+    var command = '{var_name} = Chem.MolFromSmiles("""' + drawing + '""")';
+    console.log("Executing Command: " + command);
+
+    var kernel = IPython.notebook.kernel;
+    kernel.execute(command);
+}}
+</script>
+
+<table align="left" style="border: none;">
+<tr style="border: none;">
+<td id="appletContainer{ts}" style="border: none;"></td>
+<td style="vertical-align: bottom; border: none;">
+<button onclick="onSubmit()">done !</button>
+</td>
+</tr>
+</table>
+'''

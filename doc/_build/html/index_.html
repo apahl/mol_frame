@@ -53,8 +53,8 @@
 <li><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></li>
 <li><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></li>
 </ul>
-<span class="target" id="module-mol_frame.mol_frame"></span><div class="section" id="molframe-tools">
-<h2>MolFrame Tools<a class="headerlink" href="#molframe-tools" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="module-mol_frame.mol_frame"></span><div class="section" id="molframe">
+<h2>MolFrame<a class="headerlink" href="#molframe" title="Permalink to this headline">¶</a></h2>
 <p><em>Created on Thu Aug 31, 2017 by A. Pahl</em></p>
 <p>Tools for working with MolFrame dataframes.</p>
 <dl class="class">
@@ -151,8 +151,8 @@ Either Mol, Mol_b64 or Smiles.</p>
 <dl class="method">
 <dt id="mol_frame.mol_frame.MolFrame.id_filter">
 <code class="descname">id_filter</code><span class="sig-paren">(</span><em>cpd_ids</em>, <em>reset_index=True</em>, <em>sort_by_input=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#MolFrame.id_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.MolFrame.id_filter" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a new MolFrame instance consisting only of the give cpd_ids.
-When <cite>sort_by_input == True</cite>, the lines in the new MolFrame will have the same order
+<dd><p>Returns a new MolFrame instance consisting only of the given cpd_ids.
+When <code class="docutils literal"><span class="pre">sort_by_input</span> <span class="pre">==</span> <span class="pre">True</span></code>, the lines in the new MolFrame will have the same order
 as the given cpd_ids.</p>
 </dd></dl>
 
@@ -168,7 +168,7 @@ Listed columns that are not present in the DataFrame are simply ignored
 <dt id="mol_frame.mol_frame.MolFrame.load">
 <code class="descname">load</code><span class="sig-paren">(</span><em>fn</em>, <em>sep='\t'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#MolFrame.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.MolFrame.load" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read one or multiple result files and concatenate them into one MolFrame.
-<cite>fn</cite> is a single filename (string) or a list of filenames.</p>
+<code class="docutils literal"><span class="pre">fn</span></code> is a single filename (string) or a list of filenames.</p>
 </dd></dl>
 
 <dl class="method">
@@ -181,7 +181,7 @@ Listed columns that are not present in the DataFrame are simply ignored
 <dt id="mol_frame.mol_frame.MolFrame.mol_filter">
 <code class="descname">mol_filter</code><span class="sig-paren">(</span><em>query</em>, <em>add_h=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#MolFrame.mol_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.MolFrame.mol_filter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Substructure filter. Returns a new MolFrame instance.
-<cite>query</cite> has to be a Smiles string.</p>
+<code class="docutils literal"><span class="pre">query</span></code> has to be a Smiles string.</p>
 </dd></dl>
 
 <dl class="method">
@@ -215,14 +215,14 @@ Add a suitable fingerprint once with addf_fps(), then give a reference fingerpri
 <dl class="method">
 <dt id="mol_frame.mol_frame.MolFrame.view">
 <code class="descname">view</code><span class="sig-paren">(</span><em>title='MolFrame'</em>, <em>include_smiles=False</em>, <em>drop=[]</em>, <em>keep=[]</em>, <em>fn='molframe.html'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#MolFrame.view"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.MolFrame.view" title="Permalink to this definition">¶</a></dt>
-<dd><p>Known kwargs: selectable (bool), index (bool)</p>
+<dd><p>Known kwargs: selectable (bool), index (bool), intro (optional HTML text that will be inserted above the table)</p>
 </dd></dl>
 
 </dd></dl>
 
 <dl class="data">
 <dt id="mol_frame.mol_frame.VERSION">
-<code class="descclassname">mol_frame.mol_frame.</code><code class="descname">VERSION</code><em class="property"> = '300af13 ( 2017-11-12 14:44:47 )'</em><a class="headerlink" href="#mol_frame.mol_frame.VERSION" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">mol_frame.mol_frame.</code><code class="descname">VERSION</code><em class="property"> = '5f4b958 ( 2017-11-12 18:37:13 )'</em><a class="headerlink" href="#mol_frame.mol_frame.VERSION" title="Permalink to this definition">¶</a></dt>
 <dd><p>Library version</p>
 </dd></dl>
 
@@ -258,7 +258,7 @@ Listed columns that are not present in the DataFrame are simply ignored
 <dt id="mol_frame.mol_frame.load">
 <code class="descclassname">mol_frame.mol_frame.</code><code class="descname">load</code><span class="sig-paren">(</span><em>fn</em>, <em>sep='\t'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.load" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read one or multiple result files and concatenate them into one MolFrame.
-<cite>fn</cite> is a single filename (string) or a list of filenames.</p>
+<code class="docutils literal"><span class="pre">fn</span></code> is a single filename (string) or a list of filenames.</p>
 </dd></dl>
 
 <dl class="function">
@@ -273,7 +273,7 @@ BATCH, CONTAINER</p>
 <dl class="function">
 <dt id="mol_frame.mol_frame.load_sdf">
 <code class="descclassname">mol_frame.mol_frame.</code><code class="descname">load_sdf</code><span class="sig-paren">(</span><em>fn</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mol_frame/mol_frame.html#load_sdf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mol_frame.mol_frame.load_sdf" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a MolFrame instance from an SD file (can be gzipped (fn ends with <cite>.gz</cite>)).</p>
+<dd><p>Create a MolFrame instance from an SD file (can be gzipped (fn ends with <code class="docutils literal"><span class="pre">.gz</span></code>)).</p>
 </dd></dl>
 
 <dl class="function">

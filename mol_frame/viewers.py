@@ -11,7 +11,8 @@ View MolFrames in the Browser.
 Code is based on bluenote10's NimData html browser
 (https://github.com/bluenote10/NimData/blob/master/src/nimdata/html.nim)."""
 
-import os
+import os.path as op
+import time
 from string import Template
 
 import pandas as pd
@@ -90,7 +91,7 @@ def view(df, title="MolFrame", include_smiles=False, drop=[], keep=[], fn="tmp.h
     """Known kwargs: smiles_col, mol_col, id_col, b64_col (str); selectable (bool), index (bool),
         intro (text)"""
     global SHOW_WARN
-    if "local" in LIB_LOCATION.lower() and os.access("lib/bootstrap.min.js", os.R_OK):
+    if "local" in LIB_LOCATION.lower() and op.isfile("lib/bootstrap.min.js"):
         pandas_tbl = templ.PANDAS_TABLE_LOCAL
     else:
         pandas_tbl = templ.PANDAS_TABLE_NET
@@ -115,3 +116,19 @@ def view(df, title="MolFrame", include_smiles=False, drop=[], keep=[], fn="tmp.h
     html = t.substitute(templ_dict)
     write(html, fn)
     return HTML('<a href="{}">{}</a>'.format(fn, title))
+
+
+def jsme(name="mol"):
+    """Displays a JSME molecule editor widget in the notebook
+    and stores the resulting mol in the variable that <name> assigns.
+    Requires the following line to be imported in the Notebook:
+    ``from rdkit.Chem import AllChem as Chem``"""
+    if op.isfile("lib/jsme/jsme.nocache.js"):
+        JSME_LOCATION = "lib"
+    else:
+        print("* no local installation of JSME found, using web version.")
+        JSME_LOCATION = "http://peter-ertl.com/jsme/JSME_2017-02-26"
+
+    time_stamp = time.strftime("%y%m%d%H%M%S")
+
+    return HTML(templ.JSME_FORM.format(jsme_loc=JSME_LOCATION, ts=time_stamp, var_name=name))
