@@ -212,6 +212,16 @@ class MolFrame(object):
                     **kwargs)
 
 
+    def info(self):
+        """Show a summary of the MolFrame."""
+        keys = list(self.data.keys())
+        info = []
+        for k in keys:
+            info.append({"Field": k, "Count": self.data[k].notna().count(), "Type": str(self.data[k].dtype)})
+        info.append({"Field": "Total", "Type": "", "Count": self.data.shape[0]})
+        return pd.DataFrame(info)
+
+
     def merge(self, other, on=None, how="left"):
         """Using pd.merge()"""
         if on is None:
@@ -392,20 +402,13 @@ class MolFrame(object):
     def add_smiles(self, isomeric_smiles=True):
         """Adds Smiles column from mol objects to the MolFrame.
         Always operates in-place!"""
-        data_len = len(self.data)
-        show_prog = IPYTHON and data_len > 5000
-        if show_prog:
-            ctr = nbt.ProgCtr()
-            pb = nbt.Progressbar()
-
-        def _mol_to_smiles(mol):
-            if show_prog:
-                ctr.inc()
-                pb.update(100 * ctr() / data_len)
+        def _smiles_from_mol(mol):
             return Chem.MolToSmiles(mol, isomericSmiles=isomeric_smiles)
-        self.data[self.smiles_col] = self.data[self.mol_col].apply(_mol_to_smiles)
-        if show_prog:
-            pb.done()
+
+        curr_inplace = self.inplace
+        self.inplace = True
+        self.apply_to_mol(self.smiles_col, _smiles_from_mol)
+        self.inplace = curr_inplace
 
 
     def add_fp(self, fp_name="ecfc4"):
@@ -415,36 +418,28 @@ class MolFrame(object):
 
         Always operates in-place!"""
         fp_name = fp_name.lower()
-        inplace_old = self.inplace
-        self.inplace = True
 
         def fp_method(x):
             return b64.b64encode(pickle.dumps(FPDICT[fp_name](x))).decode()
+
+        curr_inplace = self.inplace
+        self.inplace = True
         self.fp_name = fp_name
         self.apply_to_mol(self.fp_col, fp_method)
-        self.inplace = inplace_old
+        self.inplace = curr_inplace
 
 
-    def b64_from_smiles(self):
+    def add_b64(self):
         """Adds Mol_b64 column to MolFrame.
         Always operates in-place!"""
-        data_len = len(self.data)
-        show_prog = IPYTHON and data_len > 5000
-        if show_prog:
-            ctr = nbt.ProgCtr()
-            pb = nbt.Progressbar()
-
-        def _b64_from_smiles(smiles):
-            if show_prog:
-                ctr.inc()
-                pb.update(100 * ctr() / data_len)
-            mol = mol_from_smiles(smiles)
+        def _b64_from_mol(mol):
             result = b64.b64encode(pickle.dumps(mol)).decode()
             return result
 
-        self.data[self.b64_col] = self.data[self.smiles_col].apply(_b64_from_smiles)
-        if show_prog:
-            pb.done()
+        curr_inplace = self.inplace
+        self.inplace = True
+        self.apply_to_mol(self.b64_col, _b64_from_mol)
+        self.inplace = curr_inplace
 
 
     def find_mol_col(self):
@@ -724,6 +719,7 @@ def load_sdf(fn):
         file_obj.close()
     result = MolFrame()
     result.data = pd.DataFrame(d)
+    print_log(result.data, "load SDF")
     return result
 
 
