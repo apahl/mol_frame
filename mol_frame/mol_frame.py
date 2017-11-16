@@ -301,6 +301,10 @@ class MolFrame(object):
         """Drops the list of columns from the DataFrame.
         Listed columns that are not present in the DataFrame are simply ignored
         (no error is thrown)."""
+        if isinstance(cols, str):
+            cols = [str]
+        if self.mol_col in cols:
+            self.has_mols = False
         if self.inplace:
             drop_cols(self.data, cols, inplace=True)
             self.print_log("drop cols (inplace)")
@@ -320,7 +324,7 @@ class MolFrame(object):
 
     def write_csv(self, fn, parameters=None, sep="\t"):
         result = self.data.copy()
-        result = drop_cols(result, [self.mol_col, self.b64_col])
+        result = drop_cols(result, [self.mol_col])
         if isinstance(parameters, list):
             result = result[parameters]
         result.to_csv(fn, sep=sep, index=False)
@@ -362,6 +366,7 @@ class MolFrame(object):
         """Remove the mol objects from the MolFrame.
         Always operates in-place!"""
         self.data.drop(self.mol_col, axis=1, inplace=True)
+        self.has_mols = False
 
 
     def remove_smiles_and_b64(self):
