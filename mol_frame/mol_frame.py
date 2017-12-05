@@ -23,6 +23,7 @@ import numpy as np
 
 from rdkit.Chem import AllChem as Chem
 from rdkit import DataStructs
+import rdkit.Chem.Descriptors as Desc
 # from rdkit.Chem import Draw
 
 from .viewers import df_html, view
@@ -302,7 +303,7 @@ class MolFrame(object):
         Listed columns that are not present in the DataFrame are simply ignored
         (no error is thrown)."""
         if isinstance(cols, str):
-            cols = [str]
+            cols = [cols]
         if self.mol_col in cols:
             self.has_mols = False
         if self.inplace:
@@ -523,6 +524,29 @@ class MolFrame(object):
             result.data[new_col_name] = result.data[self.use_col].apply(_apply)
             if show_prog:
                 pb.done()
+            return result
+
+
+    def keep_largest_fragment(self):
+        """Removes salts, etc.
+        Returns the new molecules as SmilesFrag Column."""
+        def _largest_frag(mol):
+            mols = Chem.GetMolFrags(mol, asMols=True)
+            if len(mols) > 1:
+                frag_ctr[0] += 1
+                mols = sorted(mols, key=Desc.HeavyAtomCount, reverse=True)
+                new_smiles = Chem.MolToSmiles(mols[0], isomericSmiles=True)
+            else:
+                new_smiles = Chem.MolToSmiles(mol, isomericSmiles=True)
+            return new_smiles
+
+        frag_ctr = [0]
+        if self.inplace:
+            self.apply_to_mol("SmilesFrag", _largest_frag)
+            print("* fragments removed in {} molecules.".format(frag_ctr[0]))
+        else:
+            result = self.apply_to_mol("SmilesFrag", _largest_frag)
+            print("* fragments removed in {} molecules.".format(frag_ctr[0]))
             return result
 
 
@@ -777,7 +801,7 @@ def drop_cols(df, cols, inplace=False):
     (no error is thrown)."""
     if isinstance(cols, str):
         cols = {cols}
-    drop = set(cols).intersection(df.keys())
+    drop = set(cols).intersection(set(df.keys()))
     if inplace:
         df.drop(drop, axis=1, inplace=True)
     else:
