@@ -199,7 +199,7 @@ class MolFrame(object):
             drop.append(tmp.smiles_col)
         if len(drop) > 0:
             tmp.drop_cols(drop)
-        return HTML(df_html(tmp.data))
+        return HTML(df_html(tmp.data, include_smiles=include_smiles))
 
 
     def view(self, title="MolFrame", include_smiles=False,
@@ -325,7 +325,7 @@ class MolFrame(object):
 
     def write_csv(self, fn, parameters=None, sep="\t"):
         result = self.data.copy()
-        result = drop_cols(result, [self.mol_col])
+        result = drop_cols(result, [self.mol_col, self.b64_col])
         if isinstance(parameters, list):
             result = result[parameters]
         result.to_csv(fn, sep=sep, index=False)
@@ -527,6 +527,30 @@ class MolFrame(object):
             return result
 
 
+    def check_2d_coords(self, force=False):
+        """Generates 2D coordinates if necessary.
+        Requires the Mol object to be present (use add_mols() ).
+        Always operates inplace."""
+        data_len = len(self.data)
+        show_prog = IPYTHON and data_len > 1000
+        self.find_mol_col()
+        if show_prog:
+            ctr = nbt.ProgCtr()
+            pb = nbt.Progressbar()
+
+        def _apply(x):
+            if show_prog:
+                ctr.inc()
+                pb.update(100 * ctr() / data_len)
+            mol = self.mol_method(x)
+            if mol:
+                check_2d_coords(mol, force=force)
+
+        self.data[self.use_col].apply(_apply)
+        if show_prog:
+            pb.done()
+
+
     def keep_largest_fragment(self):
         """Removes salts, etc.
         Returns the new molecules as SmilesFrag Column."""
@@ -718,8 +742,7 @@ def load(fn, sep="\t"):
 
 def load_sdf(fn):
     """Create a MolFrame instance from an SD file (can be gzipped (fn ends with ``.gz``))."""
-    first_mol = True
-    d = {"Mol_b64": []}
+    d = {}
     do_close = True
     if isinstance(fn, str):
         if fn.endswith(".gz"):
@@ -729,6 +752,7 @@ def load_sdf(fn):
     else:
         file_obj = fn
         do_close = False
+    first_mol = True
     reader = Chem.ForwardSDMolSupplier(file_obj)
     for ctr, mol in enumerate(reader, 1):
         if not mol:
@@ -737,15 +761,27 @@ def load_sdf(fn):
         if first_mol:
             first_mol = False
             for prop in mol.GetPropNames():
+                if prop in ["Mol_b64", "order"]: continue
                 d[prop] = []
+            d_keys = set(d.keys())
+            d["Mol_b64"] = []
+        mol_props = set()
         for prop in mol.GetPropNames():
-            if prop in d:
+            if prop in d_keys:
+                mol_props.add(prop)
                 d[prop].append(get_value(mol.GetProp(prop)))
             mol.ClearProp(prop)
+
+        # append NAN to the missing props that were not in the mol:
+        missing_props = d_keys - mol_props
+        for prop in missing_props:
+            d[prop].append(np.nan)
         mol_b64 = b64.b64encode(pickle.dumps(mol)).decode()
         d["Mol_b64"].append(mol_b64)
     if do_close:
         file_obj.close()
+    for k in d.keys():
+        print(len(d[k]))
     result = MolFrame()
     result.data = pd.DataFrame(d)
     print_log(result.data, "load SDF")
