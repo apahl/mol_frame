@@ -637,7 +637,8 @@ class MolFrame(object):
 
     def sim_filter(self, query, cutoff=0.75):
         """Similarity filter. Returns a new MolFrame instance.
-        Add a suitable fingerprint once with addf_fps(), then give a reference fingerprint as query."""
+        Add a suitable fingerprint once with addf_fps(),
+        then give a reference molecule or a SMILES string as query."""
         if len(self.fp_name) == 0 or self.fp_col not in self.data.keys():
             raise KeyError("No fingerprints found. Please generate them first with add_fp().")
         data_len = len(self.data)
