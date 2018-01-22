@@ -26,17 +26,12 @@ from rdkit import DataStructs
 import rdkit.Chem.Descriptors as Desc
 # from rdkit.Chem import Draw
 
-from .viewers import df_html, view
-from .mol_images import b64_mol
-x = b64_mol  # make the linter shut up
 
-try:
-    from . import resource_paths as cprp
-except ImportError:
-    from . import resource_paths_templ as cprp
-    print("* Resource paths not found, stub loaded.")
-    print("  Automatic loading of resources will not work,")
-    print("  please have a look at resource_paths_templ.py")
+from mol_frame.viewers import df_html, view
+from mol_frame.mol_images import b64_mol
+x = b64_mol  # make the linter shut up
+from mol_frame import tools as mft
+mf_config = mft.load_config("config")
 
 try:
     from misc_tools import apl_tools
@@ -858,8 +853,8 @@ def load_resource(resource):
             # except NameError:
             print("- loading resource:                        (SMILES)")
             result = MolFrame()
-            result.data = pd.read_csv(cprp.smiles_path, sep="\t")
-            result.data = result.data[cprp.smiles_cols]
+            result.data = pd.read_csv(mf_config["Paths"]["SmilesPath"], sep="\t")
+            result.data = result.data[mf_config["Paths"]["SmilesCols"]]
             result.data = result.data.apply(pd.to_numeric, errors='ignore')
             global SMILES
             SMILES = result
@@ -868,17 +863,17 @@ def load_resource(resource):
             # except NameError:
             print("- loading resource:                        (STRUCTURES)")
             result = MolFrame()
-            result.data = pd.read_csv(cprp.smiles_path, sep="\t")
-            result.data = result.data[cprp.struct_cols]
+            result.data = pd.read_csv(mf_config["Paths"]["SmilesPath"], sep="\t")
+            result.data = result.data[mf_config["Paths"]["StructCols"]]
             result.data = result.data.apply(pd.to_numeric, errors='ignore')
             global STRUCT
             STRUCT = result
     elif "data" in res:
         if "DATA" not in glbls:
             print("- loading resource:                        (DATA)")
-            result = pd.read_csv(cprp.container_data_path, sep="\t")
-            if len(cprp.container_data_cols) > 0:
-                result = result[cprp.container_data_cols]
+            result = pd.read_csv(mf_config["Paths"]["ContainerDataPath"], sep="\t")
+            if len(mf_config["Paths"]["ContainerDataCols"]) > 0:
+                result = result[mf_config["Paths"]["ContainerDataCols"]]
             result = result.apply(pd.to_numeric, errors='ignore')
             global DATA
             DATA = MolFrame()
@@ -886,9 +881,9 @@ def load_resource(resource):
     elif "cont" in res:
         if "CONTAINER" not in glbls:
             print("- loading resource:                        (CONTAINER)")
-            result = pd.read_csv(cprp.container_path, sep="\t")
-            if len(cprp.container_cols) > 0:
-                result[cprp.container_cols]
+            result = pd.read_csv(mf_config["Paths"]["ContainerPath"], sep="\t")
+            if len(mf_config["Paths"]["ContainerCols"]) > 0:
+                result[mf_config["Paths"]["ContainerCols"]]
             result = result.apply(pd.to_numeric, errors='ignore')
             global CONTAINER
             CONTAINER = MolFrame()
@@ -896,9 +891,9 @@ def load_resource(resource):
     elif "batch" in res:
         if "BATCH" not in glbls:
             print("- loading resource:                        (BATCH)")
-            result = pd.read_csv(cprp.batch_path, sep="\t")
-            if len(cprp.batch_cols) > 0:
-                result[cprp.batch_cols]
+            result = pd.read_csv(mf_config["Paths"]["BatchPath"], sep="\t")
+            if len(mf_config["Paths"]["BatchCols"]) > 0:
+                result[mf_config["Paths"]["BatchCols"]]
             result = result.apply(pd.to_numeric, errors='ignore')
             global BATCH
             BATCH = MolFrame()

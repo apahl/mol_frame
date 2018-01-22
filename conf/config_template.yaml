@@ -1,0 +1,28 @@
+# Example configuration for mol_frame
+# for the automatic loading of resources.
+# This is optional, mol_frame also works without it...
+
+# On Linux, put in $HOME/.config/mol_frame/config.yaml
+# On Windows, put in $HOME/mol_frame/config.yaml
+# ----------------------------------------------------------------------------
+Paths:
+    SmilesPath: xxx_smiles_b64.tsv.gz    # tab-delim., gzipped
+    SmilesCols:
+        - Compound_Id
+        - Smiles
+    StructCols:
+        - Compound_Id
+        - Smiles
+        - Mol_b64
+    BatchPath: xxx_batch.tsv.gz          # tab-delim., gzipped
+    BatchCols: []
+    ContainerPath: xxx_container.tsv.gz    # tab-delim., gzipped
+    ContainerCols: []
+    # tab-delim., gzipped
+    BatchDataPath: xxx_batch_data.tsv.gz
+    BatchDataCols:
+        - Batch_Id
+        - Pure_Flag
+    # tab-delim., gzipped
+    ContainerDataPath: xxx_container_data.tsv.gz
+    ContainerDataCols: []
