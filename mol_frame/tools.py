@@ -24,15 +24,15 @@ def load_config(conf="config"):
 
     if "HOME" in os.environ:
         conf_fn = op.join(os.environ["HOME"], ".config",
-                          "cellpainting2", "{}.yaml".format(conf))
+                          "mol_frame", "{}.yaml".format(conf))
     elif "HOMEPATH" in os.environ:  # Windows
         conf_fn = op.join(os.environ["HOMEPATH"],
-                          "cellpainting2", "{}.yaml".format(conf))
+                          "mol_frame", "{}.yaml".format(conf))
     try:
         with open(conf_fn, 'r') as ymlfile:
             config = yaml.load(ymlfile)
     except FileNotFoundError:
-        print("Configuration file {}.yaml not found.".format(config))
+        print("Configuration file {}.yaml not found.".format(conf))
         print("`load_resources()` will not work.")
         print("Have a look at the *.yaml files in the `conf` folder")
         print("for templates and locations.")
