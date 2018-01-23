@@ -33,7 +33,8 @@ def load_config(conf="config"):
             config = yaml.load(ymlfile)
     except FileNotFoundError:
         print("Configuration file {}.yaml not found.".format(config))
-        print("Have a look at the *.yaml files in the `conf` folder of")
-        print("the `cluster_tools directories` for templates and locations.")
-        raise
+        print("`load_resources()` will not work.")
+        print("Have a look at the *.yaml files in the `conf` folder")
+        print("for templates and locations.")
+        config = {}
     return config
