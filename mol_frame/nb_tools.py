@@ -24,6 +24,7 @@ import uuid
 
 class ProgCtr():
     """A ProgressCounter Class"""
+
     def __init__(self, val=0):
         self.val = val
 
@@ -36,6 +37,7 @@ class ProgCtr():
 
 class Progressbar():
     """A class to display a Javascript progressbar in the IPython notebook."""
+
     def __init__(self, color="#43ace8"):
         self.bar_id = str(uuid.uuid4())
         self.eta_id = str(uuid.uuid4())
@@ -54,14 +56,14 @@ class Progressbar():
         self.start_time = time.time()
         display(self.pb)
 
-
     def update(self, perc, force=False):
         """update the progressbar
         in: progress in percent"""
         # make sure that the update function is not called too often:
         self.cur_time = time.time()
         if force or (self.cur_time - self.prev_time >= 0.50):
-            if perc > 100: perc = 100
+            if perc > 100:
+                perc = 100
             if perc >= 25:
                 eta = (100 - perc) * (self.cur_time - self.start_time) / perc
                 eta_str = format_seconds(eta)
@@ -79,3 +81,23 @@ class Progressbar():
                                 $('div#{}').width('{}%');
                                 $('div#{}').text('{}');
                             """.format(self.bar_id, 100, self.eta_id, "done")))
+
+
+def listify(s, sep=" "):
+    """A helper func for the Jupyter Notebook,
+    which generates a correctly formatted list out of pasted text."""
+    result = []
+    if s.startswith("["):
+        s = s[1:]
+    if s.endwith("]"):
+        s = s[:-1]
+    lst = s.split(sep)
+    for el in lst:
+        if len(el) == 0:
+            continue
+        try:
+            int(el)
+        except ValueError:
+            el = '"{}"'.format(el)
+        result.append(el)
+    return result
