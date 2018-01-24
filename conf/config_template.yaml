@@ -14,15 +14,10 @@ Paths:
         - Compound_Id
         - Smiles
         - Mol_b64
-    BatchPath: xxx_batch.tsv.gz          # tab-delim., gzipped
+    BatchPath: xxx_batch_data.tsv.gz          # tab-delim., gzipped
     BatchCols: []
     ContainerPath: xxx_container.tsv.gz    # tab-delim., gzipped
     ContainerCols: []
-    # tab-delim., gzipped
-    BatchDataPath: xxx_batch_data.tsv.gz
-    BatchDataCols:
-        - Batch_Id
-        - Pure_Flag
     # tab-delim., gzipped
     ContainerDataPath: xxx_container_data.tsv.gz
     ContainerDataCols: []

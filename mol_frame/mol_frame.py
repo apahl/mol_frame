@@ -841,7 +841,7 @@ def drop_cols(df, cols, inplace=False):
         return result
 
 
-def load_resource(resource):
+def load_resource(resource, limit_cols=True):
     """Known resources:
         SMILES,
         STRUCTURES: containing Mol_b64 column,
@@ -854,7 +854,10 @@ def load_resource(resource):
             print("- loading resource:                        (SMILES)")
             result = MolFrame()
             result.data = pd.read_csv(mf_config["Paths"]["SmilesPath"], sep="\t")
-            result.data = result.data[mf_config["Paths"]["SmilesCols"]]
+            if hasattr(limit_cols, '__iter__'):  # is iterable, e.g. list?
+                result.data = result.data[limit_cols]
+            elif limit_cols is True:
+                result.data = result.data[mf_config["Paths"]["SmilesCols"]]
             result.data = result.data.apply(pd.to_numeric, errors='ignore')
             global SMILES
             SMILES = result
