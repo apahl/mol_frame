@@ -964,7 +964,7 @@ def load_resource(resource, limit_cols=True):
             result = dd.read_csv(mf_config["Paths"]["SmilesPath"], sep="\t")
             if isinstance(limit_cols, list):
                 result = result[limit_cols]
-            elif limit_cols is True:
+            elif limit_cols is True and len(mf_config["Paths"]["SmilesCols"]) > 0:
                 result = result[mf_config["Paths"]["SmilesCols"]]
             # result = result.apply(pd.to_numeric, errors='ignore', axis=1)
             global SMILES
@@ -974,9 +974,11 @@ def load_resource(resource, limit_cols=True):
         if "STRUCTURES" not in glbls:
             # except NameError:
             print("- loading resource:                        (STRUCTURES)")
-            result = MolFrame()
-            result.data = dd.read_csv(mf_config["Paths"]["SmilesPath"], sep="\t")
-            result.data = result.data[mf_config["Paths"]["StructCols"]]
+            result = dd.read_csv(mf_config["Paths"]["SmilesPath"], sep="\t")
+            if isinstance(limit_cols, list):
+                result = result[limit_cols]
+            elif limit_cols is True and len(mf_config["Paths"]["StructCols"]) > 0:
+                result = result[mf_config["Paths"]["StructCols"]]
             # result.data = result.data.apply(pd.to_numeric, errors='ignore', axis=1)
             global STRUCT
             STRUCT = result
@@ -985,7 +987,9 @@ def load_resource(resource, limit_cols=True):
             print("- loading resource:                        (DATA)")
             result = dd.read_csv(mf_config["Paths"]["ContainerDataPath"], sep="\t",
                                  compression="gzip")
-            if len(mf_config["Paths"]["ContainerDataCols"]) > 0:
+            if isinstance(limit_cols, list):
+                result = result[limit_cols]
+            elif limit_cols is True and len(mf_config["Paths"]["ContainerDataCols"]) > 0:
                 result = result[mf_config["Paths"]["ContainerDataCols"]]
             # result = result.apply(pd.to_numeric, errors='ignore', axis=1)
             global DATA
@@ -995,8 +999,10 @@ def load_resource(resource, limit_cols=True):
         if "CONTAINER" not in glbls:
             print("- loading resource:                        (CONTAINER)")
             result = dd.read_csv(mf_config["Paths"]["ContainerPath"], sep="\t")
-            if len(mf_config["Paths"]["ContainerCols"]) > 0:
-                result[mf_config["Paths"]["ContainerCols"]]
+            if isinstance(limit_cols, list):
+                result = result[limit_cols]
+            elif limit_cols is True and len(mf_config["Paths"]["ContainerCols"]) > 0:
+                result = result[mf_config["Paths"]["ContainerCols"]]
             # result = result.apply(pd.to_numeric, errors='ignore', axis=1)
             global CONTAINER
             CONTAINER = MolFrame()
