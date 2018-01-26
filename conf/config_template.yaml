@@ -6,7 +6,7 @@
 # On Windows, put in $HOME/mol_frame/config.yaml
 # ----------------------------------------------------------------------------
 Paths:
-    SmilesPath: xxx_smiles_b64.tsv.gz    # tab-delim., gzipped
+    SmilesPath: xxx_smiles_b64.tsv    # tab-delim.
     SmilesCols:
         - Compound_Id
         - Smiles
@@ -14,10 +14,10 @@ Paths:
         - Compound_Id
         - Smiles
         - Mol_b64
-    BatchPath: xxx_batch_data.tsv.gz          # tab-delim., gzipped
+    BatchPath: xxx_batch_data.tsv          # tab-delim.
     BatchCols: []
-    ContainerPath: xxx_container.tsv.gz    # tab-delim., gzipped
+    ContainerPath: xxx_container.tsv    # tab-delim.
     ContainerCols: []
-    # tab-delim., gzipped
-    ContainerDataPath: xxx_container_data.tsv.gz
+    # tab-delim.
+    ContainerDataPath: xxx_container_data.tsv
     ContainerDataCols: []
