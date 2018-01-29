@@ -28,12 +28,11 @@ from rdkit import DataStructs
 import rdkit.Chem.Descriptors as Desc
 # from rdkit.Chem import Draw
 
-
+from mol_frame import nb_tools as nbt
 from mol_frame.viewers import df_html, view
 from mol_frame.mol_images import b64_mol
 x = b64_mol  # make the linter shut up
 from mol_frame import tools as mft
-mf_config = mft.load_config("config")
 
 try:
     from misc_tools import apl_tools
@@ -66,21 +65,10 @@ except ImportError:
     print("* holoviews could not be imported. scatter() and struct_hover() are not available.")
 
 
-def is_interactive_ipython():
-    try:
-        get_ipython()
-        ipy = True
-        # print("> interactive IPython session.")
-    except NameError:
-        ipy = False
-    return ipy
-
-
-IPYTHON = is_interactive_ipython()
+IPYTHON = nbt.is_interactive_ipython()
 
 if IPYTHON:
     from IPython.core.display import HTML
-    from . import nb_tools as nbt
 
 
 DEBUG = False
@@ -192,13 +180,18 @@ class MolFrame(object):
 
 
     def show(self, include_smiles=False, drop=[], **kwargs):
-        self.add_mols()
-        tmp = self.copy()
-        if not include_smiles:
-            drop.append(tmp.smiles_col)
-        if len(drop) > 0:
-            tmp.drop_cols(drop)
-        return HTML(df_html(tmp.data, include_smiles=include_smiles))
+        if IPYTHON:
+            self.add_mols()
+            tmp = self.copy()
+            if not include_smiles:
+                drop.append(tmp.smiles_col)
+            if len(drop) > 0:
+                tmp.drop_cols(drop)
+            return HTML(df_html(tmp.data, include_smiles=include_smiles))
+        else:
+            drop = [self.b64_col, self.mol_col, "Image"]
+            result = drop_cols(self.data, drop)
+            print(result.__repr__())
 
 
     def view(self, title="MolFrame", include_smiles=False,
@@ -233,6 +226,7 @@ class MolFrame(object):
 
 
     def get_data_type(self):
+        """Returns the underlying data structure as string."""
         if isinstance(self.data, pd.DataFrame):
             dtype = "pandas"
         elif isinstance(self.data, dd.DataFrame):
@@ -245,8 +239,6 @@ class MolFrame(object):
     def which_progress(self, min_len=1000):
         """Determine which kind of progress to show.
         Returns (progress_kind, data_len)"""
-        if not IPYTHON:
-            return (None, 0)
         if isinstance(self.data, pd.DataFrame):
             data_len = len(self.data)
             if data_len < min_len:
@@ -974,6 +966,7 @@ def load_resource(resource, limit_cols=True):
         SMILES,
         STRUCTURES: containing Mol_b64 column,
         BATCH, CONTAINER"""
+    mf_config = mft.load_config("config")
     res = resource.lower()
     glbls = globals()
     if "smi" in res:

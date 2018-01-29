@@ -18,10 +18,15 @@ from string import Template
 import pandas as pd
 pd.set_option('display.max_colwidth', -1)
 
-from IPython.core.display import HTML
 
-from . import templ
-from .mol_images import mol_img_tag
+from mol_frame import templ
+from mol_frame import nb_tools as nbt
+from mol_frame.mol_images import mol_img_tag
+
+IPYTHON = nbt.is_interactive_ipython()
+if IPYTHON:
+    from IPython.core.display import HTML
+
 
 LIB_LOCATION = "local"  # other option: "net"
 # for local to work, it requires the following files to be available
@@ -81,7 +86,8 @@ def df_html(df, title="MolFrame", include_smiles=False,
         # Find the keys to drop that are actually still in the df
         drop = list(set(drop).intersection(set(df.keys())))
         df = df.drop(drop, axis=1)
-    tbl = df.to_html(formatters={mol_col: _mol_img_tag}, escape=False, index=index)
+    tbl = df.to_html(
+        formatters={mol_col: _mol_img_tag}, escape=False, index=index)
     tbl = tbl.replace("<td>0    <img", "<td><img")
     tbl = tbl.replace("dtype: object", "")
     return tbl
@@ -115,7 +121,8 @@ def view(df, title="MolFrame", include_smiles=False, drop=[], keep=[], fn="tmp.h
     t = Template(pandas_tbl)
     html = t.substitute(templ_dict)
     write(html, fn)
-    return HTML('<a href="{}">{}</a>'.format(fn, title))
+    if IPYTHON:
+        return HTML('<a href="{}">{}</a>'.format(fn, title))
 
 
 def jsme(name="mol"):
@@ -123,6 +130,9 @@ def jsme(name="mol"):
     and stores the resulting mol in the variable that <name> assigns.
     Requires the following line to be imported in the Notebook:
     ``from rdkit.Chem import AllChem as Chem``"""
+    if not IPYTHON:
+        print("* interactive Jupyter notebook session required.")
+        return
     if op.isfile("lib/jsme/jsme.nocache.js"):
         JSME_LOCATION = "lib"
     else:
