@@ -1,6 +1,9 @@
 # MolFrames
 
-Working with Pandas DataFrames that can handle chemical structures.  
+Working with Dask and Pandas DataFrames that can handle chemical structures.  
+
+**[Update 29-Jan-2018]**: The module has been rewritten to now handle **Dask** and Pandas DataFrames.
+Most functions and methods (except for the SDF reader) now return a MolFrame where the `data` object is a **Dask** DataFrame to allow handling of arbitrarily large files and datasets. To explicitly get a Pandas DataFrame, call `.compute()` on a MolFrame instance.
 
 ## Features:
 Output as sortable and optionally selectable HTML Tables:
@@ -18,7 +21,7 @@ The recommended way to install the dependencies is via [conda](https://www.anaco
 * Python 3 (come on, you can do the switch to 3!)
 * Jupyter Notebook
 * [RDKit](http://rdkit.org/)
-* [Pandas](http://pandas.pydata.org/)
+* [Dask](https://dask.pydata.org/)
 * [HoloViews](http://holoviews.org/) (optionally, used for plotting)
 
 The code is written and tested on Ubuntu 17.04 / 17.10 and Python 3.6 and is intended for use in the Jupyter Notebook.
