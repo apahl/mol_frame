@@ -225,6 +225,23 @@ class MolFrame(object):
             return pd.DataFrame(info)
 
 
+    def keys(self):
+        if isinstance(self.data, pd.DataFrame):
+            return self.data.keys()
+        else:  # Dask DataFrames have no `keys()` method
+            return self.data.columns
+
+
+    def get_data_type(self):
+        if isinstance(self.data, pd.DataFrame):
+            dtype = "pandas"
+        elif isinstance(self.data, dd.DataFrame):
+            dtype = "dask"
+        else:
+            dtype = "unknown"
+        return dtype
+
+
     def which_progress(self, min_len=1000):
         """Determine which kind of progress to show.
         Returns (progress_kind, data_len)"""

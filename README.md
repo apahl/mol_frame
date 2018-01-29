@@ -3,7 +3,8 @@
 Working with Dask and Pandas DataFrames that can handle chemical structures.  
 
 **[Update 29-Jan-2018]**: The module has been rewritten to now handle **Dask** and Pandas DataFrames.
-Most functions and methods (except for the SDF reader) now return a MolFrame where the `data` object is a **Dask** DataFrame to allow handling of arbitrarily large files and datasets. To explicitly get a Pandas DataFrame, call `.compute()` on a MolFrame instance.
+Most functions and methods (except for the SDF reader) now return a MolFrame where the `data` object is a **Dask** DataFrame to allow handling of arbitrarily large files and datasets. To explicitly get a Pandas DataFrame, call `.compute()` on a MolFrame instance.  
+A `.get_data_type()`  method was added to show the data type of the underlying `data` obejct.
 
 ## Features:
 Output as sortable and optionally selectable HTML Tables:
