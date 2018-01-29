@@ -174,7 +174,9 @@ class MolFrame(object):
 
 
     def _repr_html_(self):
-        return self.data.to_html()
+        drop = [self.b64_col, self.mol_col, "Image"]
+        result = drop_cols(self.data, drop)
+        return result.to_html()
 
 
     def new(self):
