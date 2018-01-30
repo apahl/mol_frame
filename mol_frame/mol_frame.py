@@ -225,6 +225,17 @@ class MolFrame(object):
             return self.data.columns
 
 
+    def compute(self):
+        if isinstance(self.data, dd.DataFrame):
+            df = self.data.compute()
+        else:
+            df = self.data.copy()
+        result = self.new()
+        result.data = df
+        print_log(df, "compute")
+        return result
+
+
     def get_data_type(self):
         """Returns the underlying data structure as string."""
         if isinstance(self.data, pd.DataFrame):
@@ -245,22 +256,6 @@ class MolFrame(object):
                 return (None, 0)
             return ("pandas", data_len)
         return ("dask", 100)
-
-
-    def merge(self, other, on=None, how="left"):
-        """Using pd.merge()"""
-        dd_or_pd = dd if isinstance(self.data, dd.DataFrame) else pd
-        if on is None:
-            on = self.id_col
-        try:
-            df = other.data  # MolFrame or cpp.DataSet
-        except AttributeError:
-            df = other       # Pandas DataFrame
-        result = self.new()
-        result.data = dd_or_pd.merge(self.data, df, on=on, how=how)
-        result.data = result.data.apply(pd.to_numeric, errors='ignore', axis=1)
-        print_log(result.data, "merge")
-        return result
 
 
     def groupby(self, by=None, num_agg=["median", "mad", "count"], str_agg="unique"):
