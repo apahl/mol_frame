@@ -194,6 +194,28 @@ class MolFrame(object):
             print(result.__repr__())
 
 
+    @property
+    def is_pandas(self):
+        return isinstance(self.data, pd.DataFrame)
+
+
+    @property
+    def is_dask(self):
+        return isinstance(self.data, dd.DataFrame)
+
+
+    @property
+    def data_type(self):
+        """Returns the underlying data structure as string."""
+        if self.is_pandas:
+            dtype = "pandas"
+        elif self.is_dask:
+            dtype = "dask"
+        else:
+            dtype = "unknown"
+        return dtype
+
+
     def view(self, title="MolFrame", include_smiles=False,
              drop=[], keep=[], fn="molframe.html", **kwargs):
         """Known kwargs: selectable (bool), index (bool), intro (optional HTML text that will be inserted above the table)"""
@@ -208,7 +230,7 @@ class MolFrame(object):
     def info(self):
         """Show a summary of the MolFrame."""
         keys = list(self.data.columns)
-        if isinstance(self.data, dd.DataFrame):
+        if self.is_dask:
             print("Dask DataFrame, Columns:", keys)
         else:
             info = []
@@ -219,14 +241,14 @@ class MolFrame(object):
 
 
     def keys(self):
-        if isinstance(self.data, pd.DataFrame):
+        if self.is_pandas:
             return self.data.keys()
         else:  # Dask DataFrames have no `keys()` method
             return self.data.columns
 
 
     def compute(self):
-        if isinstance(self.data, dd.DataFrame):
+        if self.is_dask:
             df = self.data.compute()
         else:
             df = self.data.copy()
@@ -236,21 +258,10 @@ class MolFrame(object):
         return result
 
 
-    def get_data_type(self):
-        """Returns the underlying data structure as string."""
-        if isinstance(self.data, pd.DataFrame):
-            dtype = "pandas"
-        elif isinstance(self.data, dd.DataFrame):
-            dtype = "dask"
-        else:
-            dtype = "unknown"
-        return dtype
-
-
     def which_progress(self, min_len=1000):
         """Determine which kind of progress to show.
         Returns (progress_kind, data_len)"""
-        if isinstance(self.data, pd.DataFrame):
+        if self.is_pandas:
             data_len = len(self.data)
             if data_len < min_len:
                 return (None, 0)
@@ -354,7 +365,7 @@ class MolFrame(object):
     def write_tmp(self, parameters=None):
         """Write the Mol_Frame to a temporary file. Returns the filename.
         Can be re-openend with mf.read_csv(fn)."""
-        if isinstance(self.data, dd.DataFrame):  # Dask
+        if self.is_dask:  # Dask
             glob_str = "-*"
         else:
             glob_str = ""  # single file
@@ -365,7 +376,7 @@ class MolFrame(object):
 
     def write_pkl(self, fn):
         """Only works when the data object is a Pandas DataFrame."""
-        assert isinstance(self.data, pd.DataFrame), "Only works when the data object is a Pandas DataFrame. Consider running `.compute()` first."
+        assert self.is_pandas, "Only works when the data object is a Pandas DataFrame. Consider running `.compute()` first."
         pkl = [
             self.inplace,
             self.has_mols,
@@ -384,7 +395,7 @@ class MolFrame(object):
     def write_sdf(self, fn):
         """Only works when the data object is a Pandas DataFrame."""
 
-        assert isinstance(self.data, pd.DataFrame), "Only works when the data object is a Pandas DataFrame. Consider running `.compute()` first."
+        assert self.is_pandas, "Only works when the data object is a Pandas DataFrame. Consider running `.compute()` first."
         writer = Chem.SDWriter(fn)
         fields = []
         for f in self.data.keys():
@@ -433,7 +444,7 @@ class MolFrame(object):
         Tries to use the Mol_b64 column. If that is not present, it uses Smiles.
         Only works when the data object is a Pandas DataFrame."""
 
-        assert isinstance(self.data, pd.DataFrame), "Only works when the data object is a Pandas DataFrame. Consider running `.compute()` first."
+        assert self.is_pandas, "Only works when the data object is a Pandas DataFrame. Consider running `.compute()` first."
 
         self.find_mol_col()
         if force or not self.has_mols:
@@ -457,7 +468,7 @@ class MolFrame(object):
         Only works on Pandas DataFrames, does not work for Dask DataFrames
         (call `.compute()` first)."""
 
-        assert isinstance(self.data, pd.DataFrame), "Only works when the data object is a Pandas DataFrame. Consider running `.compute()` first."
+        assert self.is_pandas, "Only works when the data object is a Pandas DataFrame. Consider running `.compute()` first."
 
         if "Image" in self.keys() and not force:
             if self.inplace:
@@ -686,7 +697,7 @@ class MolFrame(object):
             df.reset_index(inplace=True)
             df.drop("index", axis=1, inplace=True)
         if sort_by_input:  # requires the data obejct to be a Pandas DataFrame.
-            if isinstance(df, dd.DataFrame):
+            if self.is_dask:
                 print("  - computing Pandas DataFrame...")
                 df = df.compute()
             df["_sort"] = pd.Categorical(df[self.id_col], categories=cpd_ids, ordered=True)
@@ -780,7 +791,7 @@ class MolFrame(object):
         Possible styles: size, cmap [brg, Accent, rainbow, jet, flag, Wistia]
         Only works when the data object is a Pandas DataFrame."""
 
-        assert isinstance(self.data, pd.DataFrame), "Only works when the data object is a Pandas DataFrame. Consider running `.compute()` first."
+        assert self.is_pandas, "Only works when the data object is a Pandas DataFrame. Consider running `.compute()` first."
 
         if not HOLOVIEWS:
             print("* HoloViews not available.")
