@@ -34,12 +34,15 @@ def autocrop(im, bgcolor="white"):
 
 def b64_mol(mol, size=300):
     img_file = IO()
-    try:
-        img = autocrop(Draw.MolToImage(mol, size=(size, size)))
-    except UnicodeEncodeError:
-        print(Chem.MolToSmiles(mol))
-        mol = Chem.MolFromSmiles("*")
-        img = autocrop(Draw.MolToImage(mol, size=(size, size)))
+    if isinstance(mol, list):
+        img = autocrop(Draw.MolsToGridImage(mol, size=(size, size)))
+    else:
+        try:
+            img = autocrop(Draw.MolToImage(mol, size=(size, size)))
+        except UnicodeEncodeError:
+            print(Chem.MolToSmiles(mol))
+            mol = Chem.MolFromSmiles("*")
+            img = autocrop(Draw.MolToImage(mol, size=(size, size)))
     img = make_transparent(img)
     img.save(img_file, format='PNG')
     b64 = base64.b64encode(img_file.getvalue())

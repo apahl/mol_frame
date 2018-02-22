@@ -20,6 +20,7 @@ class PreTemplate(Template):
 STYLESHEETS_LOCAL = """<link rel="stylesheet" href="lib/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="lib/css/bootstrap1.min.css">
     <link rel="stylesheet" href="lib/css/bootstrap2.min.css">
+    <link rel="stylesheet" href="lib/css/fixedHeader.dataTables.min.css">
     """
 # <link rel="stylesheet" href="lib/css/bootstrap-theme.min.css">
 JS_LIBS_LOCAL = """    <!-- jQuery -->
@@ -29,11 +30,13 @@ JS_LIBS_LOCAL = """    <!-- jQuery -->
     <!-- Bootstrap -->
     <script src="lib/bootstrap.min.js"></script>
     <!-- Data Table -->
-    <script src="lib/jquery.dataTables.min.js"></script>"""
+    <script src="lib/jquery.dataTables.min.js"></script>
+    <script src="lib/dataTables.fixedHeader.min.js"></script>"""
 
 STYLESHEETS_NET = """<link rel="stylesheet" href="https://cdn.datatables.net/1.10.16/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="https://bootswatch.com/cosmo/bootstrap.min.css">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.datatables.net/fixedheader/3.1.3/css/fixedHeader.dataTables.min.css" crossorigin="anonymous">
 """
 
 JS_LIBS_NET = """<!-- jQuery -->
@@ -46,7 +49,8 @@ JS_LIBS_NET = """<!-- jQuery -->
     <!-- Bootstrap -->
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js" integrity="sha384-h0AbiXch4ZDo7tp9hKZ4TsHbi047NrKGLO3SEJAg45jXxnGIfYzk4Si90RDIqNm1" crossorigin="anonymous"></script>
     <!-- Data Table -->
-    <script src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js"></script>"""
+    <script src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/fixedheader/3.1.3/js/dataTables.fixedHeader.min.js"></script>"""
 
 
 SELECTION_BTN = """<button id="show_sel">Selected Ids</button>"""
@@ -103,7 +107,8 @@ PANDAS_TABLE = """
     <script>
         $$(document).ready(function() {
             $$('#maintable').DataTable({
-                "pageLength": 25,
+                fixedHeader: true,
+                "pageLength": 10,
                 "dom": '<"topcustom"lfr>t<"bottomcustom"ip>'
             });
         });

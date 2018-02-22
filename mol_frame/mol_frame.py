@@ -40,7 +40,7 @@ try:
     #: Library version
     VERSION = apl_tools.get_commit(__file__)
     # I use this to keep track of the library versions I use in my project notebooks
-    print("{:45s} (commit: {})".format(__name__, VERSION))
+    print("{:45s} ({})".format(__name__, VERSION))
 
 except ImportError:
     AP_TOOLS = False
@@ -179,21 +179,6 @@ class MolFrame(object):
         return result
 
 
-    def show(self, include_smiles=False, drop=[], **kwargs):
-        if IPYTHON:
-            self.add_mols()
-            tmp = self.copy()
-            if not include_smiles:
-                drop.append(tmp.smiles_col)
-            if len(drop) > 0:
-                tmp.drop_cols(drop)
-            return HTML(df_html(tmp.data, include_smiles=include_smiles))
-        else:
-            drop = [self.b64_col, self.mol_col, "Image"]
-            result = drop_cols(self.data, drop)
-            print(result.__repr__())
-
-
     @property
     def is_pandas(self):
         return isinstance(self.data, pd.DataFrame)
@@ -214,6 +199,21 @@ class MolFrame(object):
         else:
             dtype = "unknown"
         return dtype
+
+
+    def show(self, include_smiles=False, drop=[], **kwargs):
+        if IPYTHON:
+            self.add_mols()
+            tmp = self.copy()
+            if not include_smiles:
+                drop.append(tmp.smiles_col)
+            if len(drop) > 0:
+                tmp.drop_cols(drop)
+            return HTML(df_html(tmp.data, include_smiles=include_smiles))
+        else:
+            drop = [self.b64_col, self.mol_col, "Image"]
+            result = drop_cols(self.data, drop)
+            print(result.__repr__())
 
 
     def view(self, title="MolFrame", include_smiles=False,
@@ -279,6 +279,8 @@ class MolFrame(object):
 
         if by is None:
             by = self.id_col
+        if isinstance(num_agg, str):
+            num_agg = [num_agg]
         df_keys = self.data.columns
         numeric_cols = list(self.data.select_dtypes(include=[np.number]).columns)
         str_cols = list(set(df_keys) - set(numeric_cols))
@@ -313,6 +315,19 @@ class MolFrame(object):
         result.data = df
         print_log(df, "groupby")
         return result
+
+
+    def concat(self, other):
+        pd_or_dd = pd if self.is_pandas else dd
+        if hasattr(other, "data"):  # a MolFrame instance
+            df = other.data
+        else:
+            df = other
+        result = self.new()
+        result.data = pd_or_dd.concat([self.data, df])
+        print_log(result.data, "concat")
+        return result
+
 
 
     def keep_cols(self, cols):
@@ -971,7 +986,7 @@ def load_resource(resource, limit_cols=True):
     """Known resources:
         SMILES,
         STRUCTURES: containing Mol_b64 column,
-        BATCH, CONTAINER"""
+        BATCH, CONTAINER, DATA"""
     mf_config = mft.load_config("config")
     res = resource.lower()
     glbls = globals()
@@ -1003,8 +1018,7 @@ def load_resource(resource, limit_cols=True):
     elif "data" in res:
         if "DATA" not in glbls:
             print("- loading resource:                        (DATA)")
-            result = dd.read_csv(mf_config["Paths"]["ContainerDataPath"], sep="\t",
-                                 compression="gzip")
+            result = dd.read_csv(mf_config["Paths"]["ContainerDataPath"], sep="\t")
             if isinstance(limit_cols, list):
                 result = result[limit_cols]
             elif limit_cols is True and len(mf_config["Paths"]["ContainerDataCols"]) > 0:
