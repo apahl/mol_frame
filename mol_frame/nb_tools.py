@@ -89,14 +89,14 @@ def listify(s, sep=" "):
     result = []
     if s.startswith("["):
         s = s[1:]
-    if s.endwith("]"):
+    if s.endswith("]"):
         s = s[:-1]
     lst = s.split(sep)
     for el in lst:
         if len(el) == 0:
             continue
         try:
-            int(el)
+            el = int(el)
         except ValueError:
             el = '"{}"'.format(el)
         result.append(el)
