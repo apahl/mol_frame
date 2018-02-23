@@ -472,6 +472,7 @@ class MolFrame(object):
                 result = self.new()
                 result.data = self.data
                 result.data[self.mol_col] = result.data[self.use_col].apply(self.mol_method)
+                result.has_mols = True
                 if remove_src:
                     result.data = result.data.drop(self.use_col, axis=1)
                 print_log(result.data, "add mols")
@@ -649,8 +650,7 @@ class MolFrame(object):
 
     def check_2d_coords(self, force=False):
         """Generates 2D coordinates if necessary.
-        Requires the Mol object to be present (use add_mols() ).
-        Always operates inplace."""
+        Requires the Mol object to be present (use add_mols() )."""
         show_prog, data_len = self.which_progress(min_len=1000)
         if show_prog is not None:
             ctr = nbt.ProgCtr()
@@ -671,7 +671,38 @@ class MolFrame(object):
             if show_prog is not None:
                 print("  - processed: {:8d}  done.".format(ctr()))
         else:
-            result = self.data[self.use_col].apply(_apply)
+            result = self.copy()
+            result.use_col = self.use_col
+            result.mol_method = self.mol_method
+            result.data[self.use_col].apply(_apply)
+            if show_prog is not None:
+                print("  - processed: {:8d}  done.".format(ctr()))
+            return result
+
+    def rescale(self, f=1.5):
+        def _transform(m):
+            tm = np.zeros((4, 4), np.double)
+            for i in range(3): tm[i, i] = f
+            tm[3, 3] = 1.
+            Chem.TransformMol(m, tm)
+
+        show_prog, data_len = self.which_progress(min_len=1000)
+        if show_prog is not None:
+            ctr = nbt.ProgCtr()
+
+        self.find_mol_col()
+
+        if self.inplace:
+            if not self.has_mols: return
+            self.data[self.use_col].apply(_transform)
+            if show_prog is not None:
+                print("  - processed: {:8d}  done.".format(ctr()))
+        else:
+            result = self.copy()
+            result.use_col = self.use_col
+            result.mol_method = self.mol_method
+            if not self.has_mols: return result
+            result.data[self.use_col].apply(_transform)
             if show_prog is not None:
                 print("  - processed: {:8d}  done.".format(ctr()))
             return result

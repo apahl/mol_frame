@@ -108,7 +108,7 @@ PANDAS_TABLE = """
         $$(document).ready(function() {
             $$('#maintable').DataTable({
                 fixedHeader: true,
-                "pageLength": 10,
+                "pageLength": 25,
                 "dom": '<"topcustom"lfr>t<"bottomcustom"ip>'
             });
         });
