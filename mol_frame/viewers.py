@@ -55,10 +55,19 @@ def _mol_img_tag(mol):
     return pd.Series(mol_img_tag(mol))
 
 
+def _apply_link(input, link, ln_title="Link"):
+    """input[0]: mol_img_tag
+    input[1]: link_col value"""
+    link_str = link.format(input[1])
+    result = '<a href="{}" title="{}">{}</a>'.format(link_str, ln_title, input[0])
+    return result
+
+
 def df_html(df, title="MolFrame", include_smiles=False,
-            drop=[], keep=[], fn="tmp.html", **kwargs):
+            drop=[], keep=[], **kwargs):
     df = df.copy()
-    """Known kwargs: smiles_col, mol_col, id_col, b64_col, fp_col (str); index (bool)"""
+    """Known kwargs: smiles_col, mol_col, id_col, b64_col, fp_col (str); index (bool)
+    link (has to contain "{}" to be replaced by link_col value), link_col, link_title"""
     # ---- KW Args ----
     smiles_col = kwargs.get("smiles_col", "Smiles")
     mol_col = kwargs.get("mol_col", "Mol")
@@ -66,6 +75,7 @@ def df_html(df, title="MolFrame", include_smiles=False,
     b64_col = kwargs.get("b64_col", "Mol_b64")
     fp_col = kwargs.get("fp_col", "FP_b64")
     index = kwargs.get("index", False)
+    link = kwargs.get("link", None)
     drop.extend([b64_col, fp_col])
     if not include_smiles:
         drop.append(smiles_col)
@@ -82,15 +92,27 @@ def df_html(df, title="MolFrame", include_smiles=False,
         keys.pop(id_col_pos)
     keys_sort.extend(keys)
     df = df[keys_sort]
+    df[mol_col] = df[mol_col].apply(lambda x: _mol_img_tag(x))
+    if link is not None:
+        link_col = kwargs["link_col"]
+        link_title = kwargs.get("link_title", "Link")
+        df[mol_col] = df[[mol_col, link_col]].apply(lambda x: _apply_link(x, link, link_title),
+                                                    axis=1)
     if len(drop) > 0:
         # Find the keys to drop that are actually still in the df
         drop = list(set(drop).intersection(set(df.keys())))
         df = df.drop(drop, axis=1)
-    tbl = df.to_html(
-        formatters={mol_col: _mol_img_tag}, escape=False, index=index)
+    tbl = df.to_html(escape=False, index=index)
     tbl = tbl.replace("<td>0    <img", "<td><img")
     tbl = tbl.replace("dtype: object", "")
     return tbl
+
+
+def rm_table_tag(tbl):
+    tbl_list = tbl.split("\n")
+    tbl_list = tbl_list[1:-1]
+    result = "\n".join(tbl_list)
+    return result
 
 
 def view(df, title="MolFrame", include_smiles=False, drop=[], keep=[], fn="tmp.html", **kwargs):
@@ -106,9 +128,7 @@ def view(df, title="MolFrame", include_smiles=False, drop=[], keep=[], fn="tmp.h
             print("* using online libs for MolFrame browsing...")
     intro = kwargs.get("intro", "")
     tbl = df_html(df, title, include_smiles, drop, keep, fn, **kwargs)
-    tbl_list = tbl.split("\n")
-    tbl_list = tbl_list[1:-1]
-    tbl = "\n".join(tbl_list)
+    tbl = rm_table_tag(tbl)
     templ_dict = {"title": title, "table": tbl, "intro": intro}
 
     if kwargs.get("selectable", False):
