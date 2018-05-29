@@ -59,7 +59,7 @@ def _apply_link(input, link, ln_title="Link"):
     """input[0]: mol_img_tag
     input[1]: link_col value"""
     link_str = link.format(input[1])
-    result = '<a href="{}" title="{}">{}</a>'.format(link_str, ln_title, input[0])
+    result = '<a target="_blank" href="{}" title="{}">{}</a>'.format(link_str, ln_title, input[0])
     return result
 
 
@@ -127,7 +127,7 @@ def view(df, title="MolFrame", include_smiles=False, drop=[], keep=[], fn="tmp.h
             SHOW_WARN = False
             print("* using online libs for MolFrame browsing...")
     intro = kwargs.get("intro", "")
-    tbl = df_html(df, title, include_smiles, drop, keep, fn, **kwargs)
+    tbl = df_html(df, title, include_smiles, drop, keep, **kwargs)
     tbl = rm_table_tag(tbl)
     templ_dict = {"title": title, "table": tbl, "intro": intro}
 

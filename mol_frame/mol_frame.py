@@ -9,6 +9,8 @@ MolFrame
 
 Tools for working with MolFrame dataframes."""
 
+# import pdb
+
 import time
 import pickle  # for b64 encoded mol objects
 import gzip
@@ -631,7 +633,7 @@ class MolFrame(object):
                 print("  - processed: {:8d}  done.".format(ctr()))
         else:
             result = self.new()
-            result.data = self.data
+            result.data = self.data.copy()
             result.data[new_col_name] = result.data[self.use_col].apply(_apply)
             if show_prog is not None:
                 print("  - processed: {:8d}  done.".format(ctr()))
@@ -899,10 +901,20 @@ def read_csv(fn, sep="\t"):
     ``fn`` is a single filename (string) or a list of filenames."""
     result = MolFrame()
     if isinstance(fn, list):
-        result.data = dd.concat((dd.read_csv(f, sep=sep) for f in fn))
+        df_list = []
+        for f in fn:
+            if fn.endswith(".gz"):
+                compr = "gzip"
+            else:
+                compr = None
+            df_list.append(dd.read_csv(f, sep=sep, compression=compr))
+        result.data = dd.concat(df_list)
     else:
-        result.data = dd.read_csv(fn, sep=sep)
-
+        if fn.endswith(".gz"):
+            compr = "gzip"
+        else:
+            compr = None
+        result.data = dd.read_csv(fn, sep=sep, compression=compr)
     # result.data = result.data.apply(pd.to_numeric, errors='ignore', axis=1)
     print_log(result.data, "read CSV")
     return result
@@ -975,6 +987,8 @@ def read_pkl(fn):
 def mol_from_smiles(smi, calc_2d=True):
     """Generate a mol from Smiles.
     For invalid Smiles it generates a No-structure."""
+    if smi == "foo":  # dask artifact
+        smi = "*"
     mol = Chem.MolFromSmiles(smi)
     if not mol:
         mol = Chem.MolFromSmiles("*")
