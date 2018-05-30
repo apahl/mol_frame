@@ -23,7 +23,6 @@ from copy import deepcopy
 
 import pandas as pd
 import numpy as np
-from dask import dataframe as dd
 
 from rdkit.Chem import AllChem as Chem
 from rdkit import DataStructs
@@ -128,7 +127,7 @@ class MolFrame(object):
 
     def __getitem__(self, key):
         res = self.data[key]
-        if isinstance(res, dd.DataFrame) or isinstance(res, pd.DataFrame):
+        if isinstance(res, pd.DataFrame):
             result = self.new()
             result.data = res
             print_log(result.data, "subset")
@@ -151,7 +150,7 @@ class MolFrame(object):
         if hasattr(self.data, name):
             def method(*args, **kwargs):
                 res = getattr(self.data, name)(*args, **kwargs)
-                if isinstance(res, dd.DataFrame) or isinstance(res, pd.DataFrame):
+                if isinstance(res, pd.DataFrame):
                     result = self.new()
                     result.data = res
                     print_log(result.data, name)
@@ -179,28 +178,6 @@ class MolFrame(object):
         result = self.new()
         result.data = self.data.copy()
         return result
-
-
-    @property
-    def is_pandas(self):
-        return isinstance(self.data, pd.DataFrame)
-
-
-    @property
-    def is_dask(self):
-        return isinstance(self.data, dd.DataFrame)
-
-
-    @property
-    def data_type(self):
-        """Returns the underlying data structure as string."""
-        if self.is_pandas:
-            dtype = "pandas"
-        elif self.is_dask:
-            dtype = "dask"
-        else:
-            dtype = "unknown"
-        return dtype
 
 
     def show(self, include_smiles=False, drop=[], **kwargs):
@@ -242,33 +219,13 @@ class MolFrame(object):
             return pd.DataFrame(info)
 
 
-    def keys(self):
-        if self.is_pandas:
-            return self.data.keys()
-        else:  # Dask DataFrames have no `keys()` method
-            return self.data.columns
-
-
+    # kept for backwards compatibility
     def compute(self):
-        if self.is_dask:
-            df = self.data.compute()
-        else:
-            df = self.data.copy()
+        df = self.data.copy()
         result = self.new()
         result.data = df
         print_log(df, "compute")
         return result
-
-
-    def which_progress(self, min_len=1000):
-        """Determine which kind of progress to show.
-        Returns (progress_kind, data_len)"""
-        if self.is_pandas:
-            data_len = len(self.data)
-            if data_len < min_len:
-                return (None, 0)
-            return ("pandas", data_len)
-        return ("dask", 100)
 
 
     def groupby(self, by=None, num_agg=["median", "mad", "count"], str_agg="unique"):
@@ -320,16 +277,14 @@ class MolFrame(object):
 
 
     def concat(self, other):
-        pd_or_dd = pd if self.is_pandas else dd
         if hasattr(other, "data"):  # a MolFrame instance
             df = other.data
         else:
             df = other
         result = self.new()
-        result.data = pd_or_dd.concat([self.data, df])
+        result.data = pd.concat([self.data, df])
         print_log(result.data, "concat")
         return result
-
 
 
     def keep_cols(self, cols):
@@ -393,7 +348,6 @@ class MolFrame(object):
 
     def write_pkl(self, fn):
         """Only works when the data object is a Pandas DataFrame."""
-        assert self.is_pandas, "Only works when the data object is a Pandas DataFrame. Consider running `.compute()` first."
         pkl = [
             self.inplace,
             self.has_mols,
@@ -412,7 +366,6 @@ class MolFrame(object):
     def write_sdf(self, fn):
         """Only works when the data object is a Pandas DataFrame."""
 
-        assert self.is_pandas, "Only works when the data object is a Pandas DataFrame. Consider running `.compute()` first."
         writer = Chem.SDWriter(fn)
         fields = []
         for f in self.data.keys():
@@ -460,9 +413,6 @@ class MolFrame(object):
         """Adds mol objects to the MolFrame.
         Tries to use the Mol_b64 column. If that is not present, it uses Smiles.
         Only works when the data object is a Pandas DataFrame."""
-
-        assert self.is_pandas, "Only works when the data object is a Pandas DataFrame. Consider running `.compute()` first."
-
         self.find_mol_col()
         if force or not self.has_mols:
             if self.inplace:
@@ -485,9 +435,6 @@ class MolFrame(object):
         """Adds an Image column to the MolFrame, used for structure tooltips in plotting.
         Only works on Pandas DataFrames, does not work for Dask DataFrames
         (call `.compute()` first)."""
-
-        assert self.is_pandas, "Only works when the data object is a Pandas DataFrame. Consider running `.compute()` first."
-
         if "Image" in self.keys() and not force:
             if self.inplace:
                 return
@@ -582,28 +529,25 @@ class MolFrame(object):
         """Applies a func to a column in the MolFrame.
         A wrapper around pd.apply to enable progress bars.
         Returns a new copy or modifies inplace, depending on self.inplace."""
-        show_prog, data_len = self.which_progress(min_len=5000)
-        if show_prog is not None:
-            ctr = nbt.ProgCtr()
+        if len(self.data) > 5000:
+            show_prog = True
+            pb = nbt.Progressbar(end=len(self.data))
 
         def _apply(x):
-            if show_prog is not None:
-                ctr.inc()
-                if ctr() % 500 == 0:
-                    print("  - processed: {:8d}\r".format(ctr()), end="")
-                    sys.stdout.flush()
+            if show_prog:
+                pb.inc()
             return lambda_func(x)
 
         if self.inplace:
             self.data[new_col_name] = self.data[col_name].apply(_apply)
-            if show_prog is not None:
-                print("  - processed: {:8d}  done.".format(ctr()))
+            if show_prog:
+                pb.done()
         else:
             result = self.new()
             result.data = self.data
             result.data[new_col_name] = result.data[col_name].apply(_apply)
-            if show_prog is not None:
-                print("  - processed: {:8d}  done.".format(ctr()))
+            if show_prog:
+                pb.done()
             return result
 
 
@@ -611,17 +555,14 @@ class MolFrame(object):
         """Applies a func to the Mol object, which is generated on-the-fly, if necessary.
         Displays a progress bar for longer operations.
         Returns a new copy or modifies inplace, depending on self.inplace."""
-        show_prog, data_len = self.which_progress(min_len=2000)
         self.find_mol_col()
-        if show_prog is not None:
-            ctr = nbt.ProgCtr()
+        if len(self.data) > 1000:
+            show_prog = True
+            pb = nbt.Progressbar(end=len(self.data))
 
         def _apply(x):
-            if show_prog is not None:
-                ctr.inc()
-                if ctr() % 500 == 0:
-                    print("  - processed: {:8d}\r".format(ctr()), end="")
-                    sys.stdout.flush()
+            if show_prog:
+                pb.inc()
             mol = self.mol_method(x)
             if not mol:
                 return pd.np.nan
@@ -629,14 +570,14 @@ class MolFrame(object):
 
         if self.inplace:
             self.data[new_col_name] = self.data[self.use_col].apply(_apply)
-            if show_prog is not None:
-                print("  - processed: {:8d}  done.".format(ctr()))
+            if show_prog:
+                pb.done()
         else:
             result = self.new()
             result.data = self.data.copy()
             result.data[new_col_name] = result.data[self.use_col].apply(_apply)
-            if show_prog is not None:
-                print("  - processed: {:8d}  done.".format(ctr()))
+            if show_prog:
+                pb.done()
             return result
 
 
@@ -653,60 +594,56 @@ class MolFrame(object):
     def check_2d_coords(self, force=False):
         """Generates 2D coordinates if necessary.
         Requires the Mol object to be present (use add_mols() )."""
-        show_prog, data_len = self.which_progress(min_len=1000)
-        if show_prog is not None:
-            ctr = nbt.ProgCtr()
         self.find_mol_col()
+        if len(self.data) > 1000:
+            show_prog = True
+            pb = nbt.Progressbar(end=len(self.data))
 
         def _apply(x):
-            if show_prog is not None:
-                ctr.inc()
-                if ctr() % 100 == 0:
-                    print("  - processed: {:8d}\r".format(ctr()), end="")
-                    sys.stdout.flush()
+            if show_prog:
+                pb.inc()
             mol = self.mol_method(x)
             if mol:
                 check_2d_coords(mol, force=force)
 
         if self.inplace:
             self.data[self.use_col].apply(_apply)
-            if show_prog is not None:
-                print("  - processed: {:8d}  done.".format(ctr()))
+            if show_prog:
+                pb.done()
         else:
             result = self.copy()
             result.use_col = self.use_col
             result.mol_method = self.mol_method
             result.data[self.use_col].apply(_apply)
-            if show_prog is not None:
-                print("  - processed: {:8d}  done.".format(ctr()))
+            if show_prog:
+                pb.done()
             return result
 
     def rescale(self, f=1.5):
         def _transform(m):
+            if show_prog:
+                pb.inc()
             tm = np.zeros((4, 4), np.double)
             for i in range(3): tm[i, i] = f
             tm[3, 3] = 1.
             Chem.TransformMol(m, tm)
 
-        show_prog, data_len = self.which_progress(min_len=1000)
-        if show_prog is not None:
-            ctr = nbt.ProgCtr()
-
         self.find_mol_col()
+        if len(self.data) > 1000:
+            show_prog = True
+            pb = nbt.Progressbar(end=len(self.data))
 
         if self.inplace:
             if not self.has_mols: return
             self.data[self.use_col].apply(_transform)
-            if show_prog is not None:
-                print("  - processed: {:8d}  done.".format(ctr()))
         else:
             result = self.copy()
             result.use_col = self.use_col
             result.mol_method = self.mol_method
             if not self.has_mols: return result
             result.data[self.use_col].apply(_transform)
-            if show_prog is not None:
-                print("  - processed: {:8d}  done.".format(ctr()))
+            if show_prog:
+                pb.done()
             return result
 
 
@@ -760,9 +697,9 @@ class MolFrame(object):
     def mol_filter(self, query, add_h=False):
         """Substructure filter. Returns a new MolFrame instance.
         ``query`` has to be a Smiles string."""
-        show_prog, data_len = self.which_progress(min_len=5000)
-        if show_prog is not None:
-            ctr = nbt.ProgCtr()
+        if len(self.data) > 5000:
+            show_prog = True
+            pb = nbt.Progressbar(end=len(self.data))
         query_mol = Chem.MolFromSmiles(query)
         if not query_mol:
             raise ValueError("Could not generate query mol.")
@@ -772,11 +709,8 @@ class MolFrame(object):
         res_l = []
         self.find_mol_col()
         for _, rec in self.data.iterrows():
-            if show_prog is not None:
-                ctr.inc()
-                if ctr() % 1000 == 0:
-                    print("  - processed: {:8d}\r".format(ctr()), end="")
-                    sys.stdout.flush()
+            if show_prog:
+                pb.inc()
             mol = self.mol_method(rec[self.use_col])
             if not mol: continue
             hit = False
@@ -791,8 +725,8 @@ class MolFrame(object):
                 res_l.append(rec)
         result = self.new()
         result.data = pd.DataFrame(res_l)
-        if show_prog is not None:
-                print("  - processed: {:8d}  done.".format(ctr()))
+        if show_prog:
+            pb.done()
         print_log(result.data, "mol_filter")
         return result
 
@@ -803,9 +737,9 @@ class MolFrame(object):
         then give a reference molecule or a SMILES string as query."""
         if len(self.fp_name) == 0 or self.fp_col not in self.data.columns:
             raise KeyError("No fingerprints found. Please generate them first with add_fp().")
-        show_prog, data_len = self.which_progress(min_len=5000)
-        if show_prog is not None:
-            ctr = nbt.ProgCtr()
+        if len(self.data) > 5000:
+            show_prog = True
+            pb = nbt.Progressbar(end=len(self.data))
         if isinstance(query, str):
             query_mol = Chem.MolFromSmiles(query)
         else:
@@ -816,11 +750,8 @@ class MolFrame(object):
         query_fp = fp_method(query_mol)
         res_l = []
         for _, rec in self.data.iterrows():
-            if show_prog is not None:
-                ctr.inc()
-                if ctr() % 1000 == 0:
-                    print("  - processed: {:8d}\r".format(ctr()), end="")
-                    sys.stdout.flush()
+            if show_prog:
+                pb.inc()
             mol_fp = pickle.loads(b64.b64decode(rec[self.fp_col]))
             sim = DataStructs.TanimotoSimilarity(query_fp, mol_fp)
             if sim >= cutoff:
@@ -829,8 +760,8 @@ class MolFrame(object):
         result = self.new()
         result.data = pd.DataFrame(res_l)
         print_log(result.data, "sim_filter")
-        if show_prog is not None:
-                print("  - processed: {:8d}  done.".format(ctr()))
+        if show_prog:
+            pb.done()
         return result
 
 
@@ -838,9 +769,6 @@ class MolFrame(object):
         """Possible options: width, height, legend_position [e.g. "top_right"]
         Possible styles: size, cmap [brg, Accent, rainbow, jet, flag, Wistia]
         Only works when the data object is a Pandas DataFrame."""
-
-        assert self.is_pandas, "Only works when the data object is a Pandas DataFrame. Consider running `.compute()` first."
-
         if not HOLOVIEWS:
             print("* HoloViews not available.")
             return None
@@ -903,18 +831,10 @@ def read_csv(fn, sep="\t"):
     if isinstance(fn, list):
         df_list = []
         for f in fn:
-            if fn.endswith(".gz"):
-                compr = "gzip"
-            else:
-                compr = None
-            df_list.append(dd.read_csv(f, sep=sep, compression=compr))
-        result.data = dd.concat(df_list)
+            df_list.append(pd.read_csv(f, sep=sep))
+        result.data = pd.concat(df_list)
     else:
-        if fn.endswith(".gz"):
-            compr = "gzip"
-        else:
-            compr = None
-        result.data = dd.read_csv(fn, sep=sep, compression=compr)
+        result.data = pd.read_csv(fn, sep=sep)
     # result.data = result.data.apply(pd.to_numeric, errors='ignore', axis=1)
     print_log(result.data, "read CSV")
     return result
@@ -1027,77 +947,22 @@ def drop_cols(df, cols, inplace=False):
         return result
 
 
-def load_resource(resource, limit_cols=True):
+def load_resources():
     """Known resources:
         SMILES,
         STRUCTURES: containing Mol_b64 column,
         BATCH, CONTAINER, DATA"""
     mf_config = mft.load_config("config")
-    res = resource.lower()
-    glbls = globals()
-    if "smi" in res:
-        if "SMILES" not in glbls:
-            # except NameError:
-            print("- loading resource:                        (SMILES)")
-            result = dd.read_csv(mf_config["Paths"]["SmilesPath"], sep="\t")
-            if isinstance(limit_cols, list):
-                result = result[limit_cols]
-            elif limit_cols is True and len(mf_config["Paths"]["SmilesCols"]) > 0:
-                result = result[mf_config["Paths"]["SmilesCols"]]
-            # result = result.apply(pd.to_numeric, errors='ignore', axis=1)
-            global SMILES
-            SMILES = MolFrame()
-            SMILES.data = result
-    elif "struct" in res:
-        if "STRUCTURES" not in glbls:
-            # except NameError:
-            print("- loading resource:                        (STRUCTURES)")
-            result = dd.read_csv(mf_config["Paths"]["SmilesPath"], sep="\t")
-            if isinstance(limit_cols, list):
-                result = result[limit_cols]
-            elif limit_cols is True and len(mf_config["Paths"]["StructCols"]) > 0:
-                result = result[mf_config["Paths"]["StructCols"]]
-            # result.data = result.data.apply(pd.to_numeric, errors='ignore', axis=1)
-            global STRUCT
-            STRUCT = result
-    elif "data" in res:
-        if "DATA" not in glbls:
-            print("- loading resource:                        (DATA)")
-            result = dd.read_csv(mf_config["Paths"]["ContainerDataPath"], sep="\t")
-            if isinstance(limit_cols, list):
-                result = result[limit_cols]
-            elif limit_cols is True and len(mf_config["Paths"]["ContainerDataCols"]) > 0:
-                result = result[mf_config["Paths"]["ContainerDataCols"]]
-            # result = result.apply(pd.to_numeric, errors='ignore', axis=1)
-            global DATA
-            DATA = MolFrame()
-            DATA.data = result
-    elif "cont" in res:
-        if "CONTAINER" not in glbls:
-            print("- loading resource:                        (CONTAINER)")
-            result = dd.read_csv(mf_config["Paths"]["ContainerPath"], sep="\t")
-            if isinstance(limit_cols, list):
-                result = result[limit_cols]
-            elif limit_cols is True and len(mf_config["Paths"]["ContainerCols"]) > 0:
-                result = result[mf_config["Paths"]["ContainerCols"]]
-            # result = result.apply(pd.to_numeric, errors='ignore', axis=1)
-            global CONTAINER
-            CONTAINER = MolFrame()
-            CONTAINER.data = result
-    elif "batch" in res:
-        if "BATCH" not in glbls:
-            print("- loading resource:                        (BATCH)")
-            result = dd.read_csv(mf_config["Paths"]["BatchPath"], sep="\t")
-            if isinstance(limit_cols, list):
-                result = result[limit_cols]
-            elif limit_cols is True and len(mf_config["Paths"]["BatchCols"]) > 0:
-                result = result[mf_config["Paths"]["BatchCols"]]
-            # result = result.apply(pd.to_numeric, errors='ignore', axis=1)
-            global BATCH
-            BATCH = MolFrame()
-            BATCH.data = result
-    else:
-        raise FileNotFoundError("# unknown resource: {}".format(resource))
+    global SMILES
+    SMILES = mf_config["Paths"]["SmilesPath"]
+    global STRUCT
+    STRUCT = mf_config["Paths"]["StructPath"]
+    global DATA
+    DATA = mf_config["Paths"]["ContainerDataPath"]
+    global CONTAINER
+    CONTAINER = mf_config["Paths"]["ContainerPath"]
+    global BATCH
+    BATCH = mf_config["Paths"]["BatchPath"]
 
 
 def struct_hover(mf, force=False):

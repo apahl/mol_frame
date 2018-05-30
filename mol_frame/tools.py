@@ -13,6 +13,9 @@ Helper Tools, e.g. for loading the configuration.
 import os
 import os.path as op
 import yaml
+import math
+
+import numpy as np
 
 
 def load_config(conf="config"):
@@ -38,3 +41,29 @@ def load_config(conf="config"):
         print("for templates and locations.")
         config = {}
     return config
+
+
+def unit_factor(unit):
+    """Return the factor corresponding to the unit, e.g. 1E-9 for nM.
+    Known units are: mM, uM, nM, pM. Raises ValueError for unknown unit."""
+    units = ["mm", "um", "nm", "pm"]
+    pos = units.index(unit.lower()) + 1
+    factor = 10 ** -(pos * 3)
+    return factor
+
+
+def pic50(ic50, unit=None, digits=3):
+    """Calculate pIC50 from IC50. Optionally, a unit for the input IC50 value may be given.
+    Known units are: mM, uM, nM, pM"""
+    if unit is not None:
+        ic50 *= unit_factor(unit)
+    return np.round(-math.log10(ic50), decimals=digits)
+
+
+def ic50(pic50, unit=None, digits=3):
+    """Calculate IC50 from pIC50. Optionally, a unit for the returned IC50 value may be given.
+    Known units are: mM, uM, nM, pM"""
+    ic50 = 10 ** (-pic50)
+    if unit is not None:
+        ic50 /= unit_factor(unit)
+    return np.round(ic50, digits)

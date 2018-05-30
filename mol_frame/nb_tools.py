@@ -12,9 +12,10 @@ def is_interactive_ipython():
 
 
 def format_seconds(seconds):
+    seconds = int(seconds)
     m, s = divmod(seconds, 60)
     h, m = divmod(m, 60)
-    t_str = "{:02.0f}h {:02.0f}m {:02.2f}s".format(h, m, s)
+    t_str = "{:02.0f}h {:02d}m {:02d}s".format(h, m, s)
     return t_str
 
 
@@ -38,7 +39,9 @@ class ProgCtr():
 class Progressbar():
     """A class to display a Javascript progressbar in the IPython notebook."""
 
-    def __init__(self, color="#43ace8"):
+    def __init__(self, ctr=0, end=100, color="#43ace8"):
+        self.ctr = ctr
+        self.end = end
         self.bar_id = str(uuid.uuid4())
         self.eta_id = str(uuid.uuid4())
         # possible colours: #94CAEF (blue from HTML reports),
@@ -61,7 +64,7 @@ class Progressbar():
         in: progress in percent"""
         # make sure that the update function is not called too often:
         self.cur_time = time.time()
-        if force or (self.cur_time - self.prev_time >= 0.50):
+        if force or (self.cur_time - self.prev_time >= 1.0):
             if perc > 100:
                 perc = 100
             if perc >= 25:
@@ -74,6 +77,10 @@ class Progressbar():
                                     $('div#{}').width('{}%');
                                     $('div#{}').text('{}');
                             """.format(self.bar_id, perc, self.eta_id, eta_str)))
+
+    def inc(self):
+        self.ctr += 1
+        self.update(100 * self.ctr / self.end)
 
     def done(self):
         """finalize with a full progressbar for aesthetics"""

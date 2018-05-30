@@ -1,12 +1,25 @@
-# MolFrames
+# Package MolFrames
 
-Working with Dask and Pandas DataFrames that can handle chemical structures.  
+Working with Pandas DataFrames that can handle chemical structures.  
 
-**[Update 29-Jan-2018]**: The module has been rewritten to now handle **Dask** and Pandas DataFrames.
-Most functions and methods (except for the SDF reader) now return a MolFrame where the `data` object is a **Dask** DataFrame to allow handling of arbitrarily large files and datasets. To explicitly get a Pandas DataFrame, call `.compute()` on a MolFrame instance.  
-A `.get_data_type()`  method was added to show the data type of the underlying `data` obejct.
+**[Update 30-May-2018]**: The module has been rewritten again and the Dask functionality has been removed again because it was too limiting. If you want to continue using Dask, please switch to the `dask` branch.
+Large datasets which do not fit in memory can either be first parsed and pre-filtered with the pipeline module of this project or be pre-processed with a pure dask dataframe, like this:
 
-## Features:
+```Python
+import dask.dataframe as dd
+ddf = dd.read_csv("mylargedataset.csv")
+ddf = ddf[(ddf["LogP"] < 5.0) & (ddf["MW"] < 500.0)]
+ddf = ddf.compute()
+```
+
+and then imported into a Mol_Frame:
+```Python
+from mol_frame import mol_frame as mf
+molf = mf.Mol_Frame()
+molf.data = ddf
+```
+
+## Module Mol_Frame Features:
 Output as sortable and optionally selectable HTML Tables:
 ![HTML Tables](res/molframe.png)  
 (this is an extension of bluenote10's NimData [html browser](https://github.com/bluenote10/NimData/blob/master/src/nimdata/html.nim) 
@@ -16,6 +29,65 @@ Interactive HoloViews plots with structure tooltips:
 ![Scatter Plot](res/scatter_test.png)
 
 Operations on molecules. For long operations, this displays a progress bar in the Notebook.
+
+## Module Pipeline Feature
+
+A Pipelining Workflow using Python Generators, mainly for RDKit and large compound sets.
+The use of generators allows working with arbitrarily large data sets, the memory usage at any given time is low.
+
+Example use:
+```Python
+from rdkit_ipynb_tools import pipeline as p
+s = Summary()
+rd = start_csv_reader(test_data_b64.csv.gz", summary=s)
+b64 = pipe_mol_from_b64(rd, summary=s)
+filt = pipe_mol_filter(b64, "[H]c2c([H])c1ncoc1c([H])c2C(N)=O", summary=s)
+stop_sdf_writer(filt, "test.sdf", summary=s)
+```
+
+or, using the pipe function:
+```Python
+s = Summary()
+rd = start_sdf_reader("test.sdf", summary=s)
+pipe(rd,
+     pipe_keep_largest_fragment,
+     (pipe_neutralize_mol, {"summary": s}),
+     (pipe_keep_props, ["Ordernumber", "NP_Score"]),
+     (stop_csv_writer, "test.csv", {"summary": s})
+    )
+```
+
+The progress of the pipeline is displayed as a HTML table in the Notebook and can also be followed in a separate terminal with: `watch -n 2 cat pipeline.log`.
+
+## Currently Available Pipeline Components:
+
+| Starting                   | Running                    | Stopping
+|----------------------------|----------------------------|---------------------------|
+| start_cache_reader         | pipe_calc_props            | stop_cache_writer         |
+| start_csv_reader           | pipe_custom_filter         | stop_count_records        |
+| start_mol_csv_reader       | pipe_custom_man            | stop_csv_writer           |
+| start_sdf_reader           | pipe_do_nothing            | stop_df_from_stream       |
+| start_stream_from_dict     | pipe_has_prop_filter       | stop_dict_from_stream     |
+| start_stream_from_mol_list | pipe_id_filter             | stop_mol_list_from_stream |
+|                            | pipe_inspect_stream        | stop_sdf_writer           |
+|                            | pipe_join_data_from_file   |                           |
+|                            | pipe_keep_largest_fragment |                           |
+|                            | pipe_keep_props            |                           |
+|                            | pipe_merge_data            |                           |
+|                            | pipe_mol_filter            |                           |
+|                            | pipe_mol_from_b64          |                           |
+|                            | pipe_mol_from_smiles       |                           |
+|                            | pipe_mol_to_b64            |                           |
+|                            | pipe_mol_to_smiles         |                           |
+|                            | pipe_neutralize_mol        |                           |
+|                            | pipe_remove_props          |                           |
+|                            | pipe_rename_prop           |                           |
+|                            | pipe_sim_filter            |                           |
+|                            | pipe_sleep                 |                           |
+
+
+Limitation: unlike in other pipelining tools, because of the nature of Python generators, the pipeline can not be branched.
+
 
 ## Requirements
 The recommended way to install the dependencies is via [conda](https://www.anaconda.com/download/).
