@@ -51,9 +51,9 @@ def b64_mol(mol, size=300):
     return b64
 
 
-def mol_img_tag(mol, options=None):
+def mol_img_tag(mol, size=300, options=None):
     tag = """<img {} src="data:image/png;base64,{}" alt="Mol"/>"""
     if options is None:
         options = ""
-    img_tag = tag.format(options, b64_mol(mol))
+    img_tag = tag.format(options, b64_mol(mol, size=size))
     return img_tag

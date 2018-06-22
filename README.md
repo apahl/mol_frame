@@ -8,6 +8,7 @@ Large datasets which do not fit in memory can either be first parsed and pre-fil
 ```Python
 import dask.dataframe as dd
 ddf = dd.read_csv("mylargedataset.csv")
+# Pre-filtering by columns that are already present in the dataset:
 ddf = ddf[(ddf["LogP"] < 5.0) & (ddf["MW"] < 500.0)]
 ddf = ddf.compute()
 ```
@@ -19,7 +20,10 @@ molf = mf.Mol_Frame()
 molf.data = ddf
 ```
 
-## Module Mol_Frame Features:
+## Module Mol_Frame
+
+Operations on molecules. For long operations, this displays a progress bar in the Notebook.
+
 Output as sortable and optionally selectable HTML Tables:
 ![HTML Tables](res/molframe.png)  
 (this is an extension of bluenote10's NimData [html browser](https://github.com/bluenote10/NimData/blob/master/src/nimdata/html.nim) 
@@ -28,38 +32,37 @@ which uses JQuery Datatables.)
 Interactive HoloViews plots with structure tooltips:
 ![Scatter Plot](res/scatter_test.png)
 
-Operations on molecules. For long operations, this displays a progress bar in the Notebook.
 
-## Module Pipeline Feature
+## Module Pipeline
 
 A Pipelining Workflow using Python Generators, mainly for RDKit and large compound sets.
 The use of generators allows working with arbitrarily large data sets, the memory usage at any given time is low.
 
 Example use:
 ```Python
-from rdkit_ipynb_tools import pipeline as p
-s = Summary()
-rd = start_csv_reader(test_data_b64.csv.gz", summary=s)
-b64 = pipe_mol_from_b64(rd, summary=s)
-filt = pipe_mol_filter(b64, "[H]c2c([H])c1ncoc1c([H])c2C(N)=O", summary=s)
-stop_sdf_writer(filt, "test.sdf", summary=s)
+from mol_frame import pipeline as p
+s = p.Summary()
+rd = p.start_csv_reader(test_data_b64.csv.gz", summary=s)
+b64 = p.pipe_mol_from_b64(rd, summary=s)
+filt = p.pipe_mol_filter(b64, "[H]c2c([H])c1ncoc1c([H])c2C(N)=O", summary=s)
+p.stop_sdf_writer(filt, "test.sdf", summary=s)
 ```
 
 or, using the pipe function:
 ```Python
-s = Summary()
-rd = start_sdf_reader("test.sdf", summary=s)
-pipe(rd,
-     pipe_keep_largest_fragment,
-     (pipe_neutralize_mol, {"summary": s}),
-     (pipe_keep_props, ["Ordernumber", "NP_Score"]),
-     (stop_csv_writer, "test.csv", {"summary": s})
+from mol_frame import pipeline as p
+s = p.Summary()
+p.pipe((p.start_sdf_reader("test.sdf", {"summary": s})),
+     p.pipe_keep_largest_fragment,
+     (p.pipe_neutralize_mol, {"summary": s}),
+     (p.pipe_keep_props, ["Ordernumber", "NP_Score"]),
+     (p.stop_csv_writer, "test.csv", {"summary": s})
     )
 ```
 
 The progress of the pipeline is displayed as a HTML table in the Notebook and can also be followed in a separate terminal with: `watch -n 2 cat pipeline.log`.
 
-## Currently Available Pipeline Components:
+### Currently Available Pipeline Components:
 
 | Starting                   | Running                    | Stopping
 |----------------------------|----------------------------|---------------------------|
@@ -86,7 +89,7 @@ The progress of the pipeline is displayed as a HTML table in the Notebook and ca
 |                            | pipe_sleep                 |                           |
 
 
-Limitation: unlike in other pipelining tools, because of the nature of Python generators, the pipeline can not be branched.
+Limitation: unlike in other pipelining tools, because of the nature of Python generators, the pipeline can not be branched. You can use the `stop_cache_writer` to use results in multiple pipelines.
 
 
 ## Requirements

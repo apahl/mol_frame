@@ -30,7 +30,7 @@ import rdkit.Chem.Descriptors as Desc
 # from rdkit.Chem import Draw
 
 from mol_frame import nb_tools as nbt
-from mol_frame.viewers import df_html, view
+from mol_frame.viewers import df_html, view, show_grid, write_grid
 from mol_frame.mol_images import b64_mol
 x = b64_mol  # make the linter shut up
 from mol_frame import tools as mft
@@ -195,8 +195,8 @@ class MolFrame(object):
             print(result.__repr__())
 
 
-    def view(self, title="MolFrame", include_smiles=False,
-             drop=[], keep=[], fn="molframe.html", **kwargs):
+    def write_tbl(self, title="MolFrame", include_smiles=False,
+                  drop=[], keep=[], fn="molframe.html", **kwargs):
         """Known kwargs: selectable (bool), index (bool), intro (optional HTML text that will be inserted above the table)"""
         self.add_mols()
         return view(self.data, title=title, include_smiles=include_smiles,
@@ -204,6 +204,37 @@ class MolFrame(object):
                     smiles_col=self.smiles_col, mol_col=self.mol_col, id_col=self.id_col,
                     b64_col=self.b64_col, fp_col=self.fp_col,
                     **kwargs)
+
+
+    def write_grid(self, title="MolGrid",
+                   drop=[], keep=[], fn="molgrid.html", **kwargs):
+        """Known kwargs: interactive (bool)
+                         highlight (dict)
+                         header (str)
+                         summary (str)"""
+        self.add_mols()
+        if self.id_col is not None and self.id_col not in self.data.keys():
+            self.id_col = None
+        return write_grid(self.data, title=title,
+                          drop=drop, keep=keep, fn=fn,
+                          smiles_col=self.smiles_col, mol_col=self.mol_col, id_col=self.id_col,
+                          b64_col=self.b64_col, fp_col=self.fp_col,
+                          **kwargs)
+
+
+    def grid(self, title="MolGrid",
+             drop=[], keep=[], fn="molgrid.html", **kwargs):
+        """Known kwargs: interactive (bool)
+                         highlight (dict)"""
+        self.add_mols()
+        if self.id_col is not None and self.id_col not in self.data.keys():
+            self.id_col = None
+        return show_grid(self.data, title=title,
+                         drop=drop, keep=keep, fn=fn,
+                         smiles_col=self.smiles_col, mol_col=self.mol_col, id_col=self.id_col,
+                         b64_col=self.b64_col, fp_col=self.fp_col,
+                         **kwargs)
+
 
 
     def info(self):
