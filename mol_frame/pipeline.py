@@ -618,6 +618,35 @@ def pipe_mol_from_b64(stream, in_b64="Mol_b64", remove=True, summary=None, comp_
                 yield rec
 
 
+def pipe_murcko_smiles(stream, summary=None, comp_id="pipe_murcko_smiles"):
+    """Calculate Murcko Smiles from the molecules on the stream.
+    The property `murcko_smiles` is added to each record."""
+    rec_counter = 0
+    for rec in stream:
+        rec_counter += 1
+        msmiles = MurckoScaffold.MurckoScaffoldSmiles(mol=rec["mol"])
+        if summary is not None:
+            summary[comp_id] = rec_counter
+
+        rec["Murcko_Smiles"] = msmiles
+        yield rec
+
+
+def pipe_remove_dups(stream, field, summary=None, comp_id="pipe_remove_dups"):
+    """Remove duplicate entries from the stream.
+    Only the given field is considered."""
+    rec_counter = 0
+    ctr = {}
+    for rec in stream:
+        if field in rec:
+            if rec[field] not in ctr:
+                rec_counter += 1
+                ctr[rec[field]] = True
+                if summary is not None:
+                    summary[comp_id] = rec_counter
+                yield rec
+
+
 def start_mol_csv_reader(fn, max_records=0, in_b64="Mol_b64", tag=True, sep="\t", summary=None, comp_id="start_mol_csv_reader"):
     """A reader for csv files containing molecules in binary b64 format.
 

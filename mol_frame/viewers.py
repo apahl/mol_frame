@@ -75,6 +75,29 @@ def drop_cols(df, drop):
     return df
 
 
+def show_mols(mols_or_smiles, cols=4):
+    """A small utility to quickly view a list of mols in a grid."""
+    html_list = ['<table align="center">']
+    idx = 0
+    row_line = []
+    for mol in mols_or_smiles:
+        idx += 1
+        img = mol_img_tag(mol)
+        cell = "<td>{}<td>".format(img)
+        row_line.append(cell)
+        if idx == cols:
+            row = "<tr>" + "".join(row_line) + "</td>"
+            html_list.append(row)
+            idx = 0
+            row_line = []
+    if idx != 0:
+        row = "<tr>" + "".join(row_line) + "</td>"
+        html_list.append(row)
+    html_list.append("</table>")
+    table = "\n".join(html_list)
+    return HTML(table)
+
+
 def df_html(df, title="MolFrame", include_smiles=False,
             drop=[], keep=[], **kwargs):
     df = df.copy()
@@ -137,6 +160,7 @@ def html_grid(df, title="MolFrame",
     interact = kwargs.get("interactive", False)
     highlight = kwargs.get("highlight", None)
     mols_per_row = kwargs.get("mols_per_row", 4)
+    hlsss = kwargs.get("hlsss", None)  # colname with Smiles (,-separated) for Atom highlighting
     img_dir = None
     if len(keep) > 0:
         keep.append(mol_col)
@@ -147,7 +171,7 @@ def html_grid(df, title="MolFrame",
     df = drop_cols(df, drop)
     props = []
     for x in list(df.keys()):
-        if x != mol_col and x != id_col:
+        if x != mol_col and x != id_col and x != hlsss:
             props.append(x)
     time_stamp = time.strftime("%y%m%d%H%M%S")
     # td_opt = {"align": "center"}
@@ -181,8 +205,12 @@ def html_grid(df, title="MolFrame",
             cell = ["no structure"]
 
         else:
+            if hlsss is not None:
+                hlsss_smi = rec[hlsss]
+            else:
+                hlsss_smi = None
             if img_dir is None:  # embed the images in the doc
-                img_src = b64_mol(mol, size)
+                img_src = b64_mol(mol, size * 2, hlsss=hlsss_smi)
 
             if interact and guessed_id is not None:
                 img_opt = {"title": "Click to select / unselect",
@@ -190,6 +218,8 @@ def html_grid(df, title="MolFrame",
             else:
                 img_opt = {"title": str(img_id)}
 
+            img_opt["max-width"] = "{}px".format(size)
+            img_opt["max-height"] = "{}px".format(size)
             cell = templ.img(img_src, img_opt)
 
         # td_opt = {"align": "center"}

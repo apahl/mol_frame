@@ -1,4 +1,5 @@
 import base64
+from itertools import chain
 from io import BytesIO as IO
 
 from PIL import Image, ImageChops
@@ -32,13 +33,28 @@ def autocrop(im, bgcolor="white"):
     return None  # no contents
 
 
-def b64_mol(mol, size=300):
+def b64_mol(mol, size=300, hlsss=None):
     img_file = IO()
     if isinstance(mol, list):
         img = autocrop(Draw.MolsToGridImage(mol, size=(size, size)))
     else:
+        if hlsss is not None:
+            if isinstance(hlsss, str):
+                hlsss = hlsss.split(",")
+                atoms = set()
+                for smi in hlsss:
+                    m = Chem.MolFromSmiles(smi)
+                    if m:
+                        matches = list(chain(*mol.GetSubstructMatches(m)))
+                    else:
+                        matches = []
+                    if len(matches) > 0:
+                        atoms = atoms.union(set(matches))
+            atoms = list(atoms)
+        else:
+            atoms = []
         try:
-            img = autocrop(Draw.MolToImage(mol, size=(size, size)))
+            img = autocrop(Draw.MolToImage(mol, size=(size, size), highlightAtoms=atoms))
         except UnicodeEncodeError:
             print(Chem.MolToSmiles(mol))
             mol = Chem.MolFromSmiles("*")
@@ -52,6 +68,8 @@ def b64_mol(mol, size=300):
 
 
 def mol_img_tag(mol, size=300, options=None):
+    if isinstance(mol, str):  # convert from Smiles on-the-fly, when necessary
+        mol = Chem.MolFromSmiles(mol)
     tag = """<img {} src="data:image/png;base64,{}" alt="Mol"/>"""
     if options is None:
         options = ""

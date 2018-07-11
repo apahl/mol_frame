@@ -82,8 +82,10 @@ The progress of the pipeline is displayed as a HTML table in the Notebook and ca
 |                            | pipe_mol_from_smiles       |                           |
 |                            | pipe_mol_to_b64            |                           |
 |                            | pipe_mol_to_smiles         |                           |
+|                            | pipe_murcko_smiles         |                           |
 |                            | pipe_neutralize_mol        |                           |
 |                            | pipe_remove_props          |                           |
+|                            | pipe_remove_dups           |                           |
 |                            | pipe_rename_prop           |                           |
 |                            | pipe_sim_filter            |                           |
 |                            | pipe_sleep                 |                           |

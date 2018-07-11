@@ -211,7 +211,8 @@ class MolFrame(object):
         """Known kwargs: interactive (bool)
                          highlight (dict)
                          header (str)
-                         summary (str)"""
+                         summary (str)
+                         hlsss (colname)"""
         self.add_mols()
         if self.id_col is not None and self.id_col not in self.data.keys():
             self.id_col = None
@@ -225,7 +226,8 @@ class MolFrame(object):
     def grid(self, title="MolGrid",
              drop=[], keep=[], fn="molgrid.html", **kwargs):
         """Known kwargs: interactive (bool)
-                         highlight (dict)"""
+                         highlight (dict)
+                         hlsss (colname)"""
         self.add_mols()
         if self.id_col is not None and self.id_col not in self.data.keys():
             self.id_col = None
@@ -563,6 +565,8 @@ class MolFrame(object):
         if len(self.data) > 5000:
             show_prog = True
             pb = nbt.Progressbar(end=len(self.data))
+        else:
+            show_prog = False
 
         def _apply(x):
             if show_prog:
@@ -590,6 +594,8 @@ class MolFrame(object):
         if len(self.data) > 1000:
             show_prog = True
             pb = nbt.Progressbar(end=len(self.data))
+        else:
+            show_prog = False
 
         def _apply(x):
             if show_prog:
@@ -629,6 +635,8 @@ class MolFrame(object):
         if len(self.data) > 1000:
             show_prog = True
             pb = nbt.Progressbar(end=len(self.data))
+        else:
+            show_prog = False
 
         def _apply(x):
             if show_prog:
@@ -663,6 +671,8 @@ class MolFrame(object):
         if len(self.data) > 1000:
             show_prog = True
             pb = nbt.Progressbar(end=len(self.data))
+        else:
+            show_prog = False
 
         if self.inplace:
             if not self.has_mols: return
@@ -731,6 +741,8 @@ class MolFrame(object):
         if len(self.data) > 5000:
             show_prog = True
             pb = nbt.Progressbar(end=len(self.data))
+        else:
+            show_prog = False
         query_mol = Chem.MolFromSmiles(query)
         if not query_mol:
             raise ValueError("Could not generate query mol.")
@@ -771,6 +783,8 @@ class MolFrame(object):
         if len(self.data) > 5000:
             show_prog = True
             pb = nbt.Progressbar(end=len(self.data))
+        else:
+            show_prog = False
         if isinstance(query, str):
             query_mol = Chem.MolFromSmiles(query)
         else:
