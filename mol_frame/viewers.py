@@ -154,13 +154,19 @@ def html_grid(df, title="MolFrame",
         order (list): a list of substrings to match with the field names for ordering in the table header
         img_dir (str): if None, the molecule images are embedded in the HTML doc.
             Otherwise the images will be stored in img_dir and linked in the doc.
-
+        interactive (bool)
+        link_templ, link_col (str) (then interactive is false)
     Returns:
         HTML table as TEXT with molecules in grid-like layout to embed in IPython or a web page."""
     interact = kwargs.get("interactive", False)
+    link_templ = kwargs.get("link_templ", None)
+    link_col = kwargs.get("link_col", None)
+    if link_col is not None:
+        interact = False  # interact is not avail. when clicking the image should open a link
     highlight = kwargs.get("highlight", None)
     mols_per_row = kwargs.get("mols_per_row", 4)
     hlsss = kwargs.get("hlsss", None)  # colname with Smiles (,-separated) for Atom highlighting
+    truncate = kwargs.get("truncate", 12)
     img_dir = None
     if len(keep) > 0:
         keep.append(mol_col)
@@ -215,12 +221,22 @@ def html_grid(df, title="MolFrame",
             if interact and guessed_id is not None:
                 img_opt = {"title": "Click to select / unselect",
                            "onclick": "toggleCpd('{}')".format(id_prop_val)}
+            elif link_col is not None:
+
+                img_opt = {"title": "Click to open link"}
+                #          "onclick": "location.href='{}';".format(link)}
+                # '<a target="_blank" href="{}" title="{}">{}</a>'
+
             else:
                 img_opt = {"title": str(img_id)}
 
             img_opt["max-width"] = "{}px".format(size)
             img_opt["max-height"] = "{}px".format(size)
             cell = templ.img(img_src, img_opt)
+            if link_col is not None:
+                link = link_templ.format(rec[link_col])
+                a_opt = {"href": link}
+                cell = templ.a(cell, a_opt)
 
         # td_opt = {"align": "center"}
         td_opt = {"style": "text-align: center;", "bgcolor": "#FFFFFF"}
@@ -248,7 +264,7 @@ def html_grid(df, title="MolFrame",
                     if prop == "Pure_Flag" and prop_val != "" and prop_val != "n.d." and "Purity" in rec and "LCMS_Date" in rec:
                         val_opt["title"] = "{}% ({})".format(rec["Purity"], rec["LCMS_Date"])
                 prop_cells.extend(templ.td(prop[:25], prop_opt))
-                prop_cells.extend(templ.td(prop_val[:8], val_opt))
+                prop_cells.extend(templ.td(prop_val[:truncate], val_opt))
                 prop_row_cells[prop_no].extend(prop_cells)
 
         if idx % mols_per_row == 0 or idx == len(df):

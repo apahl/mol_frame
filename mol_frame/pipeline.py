@@ -920,6 +920,28 @@ def pipe_mol_filter(stream, query, smarts=False, invert=False, add_h=False, summ
             yield rec
 
 
+def pipe_calc_fp_b64(stream, summary=None, comp_id="pipe_calc_fp"):
+    """Calculate the Fingerprint. This is usefule to do in a separate pipeline
+    before performing a similarity search, where this FP is used.
+    The FP is calculated from the Murcko scaffold of the mol."""
+    rec_counter = 0
+    for rec in stream:
+        if "mol" not in rec: continue
+        murcko_mol = MurckoScaffold.GetScaffoldForMol(rec["mol"])
+        if USE_FP == "morgan":
+            mol_fp = Desc.rdMolDescriptors.GetMorganFingerprintAsBitVect(
+                murcko_mol, 2)
+        elif USE_FP == "avalon":
+            mol_fp = pyAv.GetAvalonFP(murcko_mol, 1024)
+        else:
+            mol_fp = FingerprintMols.FingerprintMol(murcko_mol)
+        rec_counter += 1
+        rec["FP_b64"] = b64.b64encode(pickle.dumps(mol_fp)).decode()
+        if summary is not None:
+            summary[comp_id] = rec_counter
+        yield rec
+
+
 def pipe_sim_filter(stream, query, cutoff=80, summary=None, comp_id="pipe_sim_filter"):
     """Filter for compounds that have a similarity greater or equal
     than `cutoff` (in percent) to the `query` Smiles.
@@ -931,7 +953,6 @@ def pipe_sim_filter(stream, query, cutoff=80, summary=None, comp_id="pipe_sim_fi
     if not query_mol:
         print("* {} ERROR: could not generate query from SMILES.".format(comp_id))
         return None
-
     murcko_mol = MurckoScaffold.GetScaffoldForMol(query_mol)
     if USE_FP == "morgan":
         query_fp = Desc.rdMolDescriptors.GetMorganFingerprintAsBitVect(murcko_mol, 2)
@@ -941,11 +962,10 @@ def pipe_sim_filter(stream, query, cutoff=80, summary=None, comp_id="pipe_sim_fi
         query_fp = FingerprintMols.FingerprintMol(murcko_mol)
 
     for rec in stream:
-        if "mol" not in rec: continue
-
         if "FP_b64" in rec:  # use the pre-defined fingerprint if it is present in the stream
             mol_fp = pickle.loads(b64.b64decode(rec["FP_b64"]))
         else:
+            if "mol" not in rec: continue
             murcko_mol = MurckoScaffold.GetScaffoldForMol(rec["mol"])
             if USE_FP == "morgan":
                 mol_fp = Desc.rdMolDescriptors.GetMorganFingerprintAsBitVect(murcko_mol, 2)

@@ -83,6 +83,7 @@ The progress of the pipeline is displayed as a HTML table in the Notebook and ca
 |                            | pipe_mol_to_b64            |                           |
 |                            | pipe_mol_to_smiles         |                           |
 |                            | pipe_murcko_smiles         |                           |
+|                            | pipe_calc_fp_b64           |                           |
 |                            | pipe_neutralize_mol        |                           |
 |                            | pipe_remove_props          |                           |
 |                            | pipe_remove_dups           |                           |

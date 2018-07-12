@@ -212,7 +212,9 @@ class MolFrame(object):
                          highlight (dict)
                          header (str)
                          summary (str)
-                         hlsss (colname)"""
+                         hlsss (colname)
+                         interactive (bool)
+                         link_templ. link_col (str) (then interactive is false)"""
         self.add_mols()
         if self.id_col is not None and self.id_col not in self.data.keys():
             self.id_col = None
@@ -227,7 +229,8 @@ class MolFrame(object):
              drop=[], keep=[], fn="molgrid.html", **kwargs):
         """Known kwargs: interactive (bool)
                          highlight (dict)
-                         hlsss (colname)"""
+                         hlsss (colname)
+                         truncate (int)"""
         self.add_mols()
         if self.id_col is not None and self.id_col not in self.data.keys():
             self.id_col = None
