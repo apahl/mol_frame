@@ -7,8 +7,11 @@ from PIL import Image, ImageChops
 from rdkit.Chem import AllChem as Chem
 from rdkit.Chem import Draw
 
-Draw.DrawingOptions.atomLabelFontFace = "DejaVu Sans"
-Draw.DrawingOptions.atomLabelFontSize = 18
+try:
+    Draw.DrawingOptions.atomLabelFontFace = "DejaVu Sans"
+    Draw.DrawingOptions.atomLabelFontSize = 18
+except KeyError:  # Font "DejaVu Sans" is not available
+    pass
 
 
 def make_transparent(img):
