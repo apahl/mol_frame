@@ -71,7 +71,8 @@ def drop_cols(df, drop):
     if len(drop) > 0:
         # Find the keys to drop that are actually still in the df
         drop = list(set(drop).intersection(set(df.keys())))
-        df = df.drop(drop, axis=1)
+        if len(drop) > 0:
+            df = df.drop(drop, axis=1)
     return df
 
 
@@ -170,8 +171,8 @@ def html_grid(df, title="MolFrame",
     img_dir = None
     if len(keep) > 0:
         keep.append(mol_col)
-        if id_col is not None:
-            keep.append(id_col)
+        if id_col is not None and id_col not in keep:
+                keep.append(id_col)
         df = df[keep]
     drop.extend([smiles_col, b64_col, fp_col])
     df = drop_cols(df, drop)
@@ -230,8 +231,8 @@ def html_grid(df, title="MolFrame",
             else:
                 img_opt = {"title": str(img_id)}
 
-            img_opt["max-width"] = "{}px".format(size)
-            img_opt["max-height"] = "{}px".format(size)
+            img_opt["style"] = f'max-width: {size}px; max-height: {size}px;'
+            # img_opt["height"] = "{}px".format(size)
             cell = templ.img(img_src, img_opt)
             if link_col is not None:
                 link = link_templ.format(rec[link_col])

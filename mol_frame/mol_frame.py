@@ -214,7 +214,25 @@ class MolFrame(object):
                          summary (str)
                          hlsss (colname)
                          interactive (bool)
-                         link_templ. link_col (str) (then interactive is false)"""
+                         link_templ. link_col (str) (then interactive is false)
+
+        Example:
+            title = f"Sim Scaf {scaf_num}"
+            fn = f"chembl_sim_scaf_{scaf_num}.html"
+            header = f"ChEMBL Compounds Most Similar to Scaf {scaf_num}"
+            df_sim = mf.read_csv(f"chembl_sim_scaf_{scaf_num}.tsv")
+            df_sim.id_col = "Chembl_Id"
+            df_sim = df_sim.sort_values("Sim", ascending=False)
+            df_sim = df_sim.head(100)
+            img_tag = mfi.mol_img_tag(smiles[scaf_num - 1])
+            highest_sim = df_sim["Sim"].values[0]
+            summary = f'''Compounds from ChEMBL 24 with similarity to scaffold {scaf_num}. <br>{img_tag}<br><br>
+            The highest observed similarity was {highest_sim} %.<br>
+            The search was performed using Morgan fingerprints and Tanimoto similarity
+            on the Murcko scaffolds of the compounds from ChEMBL 24).<br>'''
+            link_col = "Chembl_Id"
+            link_templ = "https://www.ebi.ac.uk/chembl/compound/inspect/{}"
+            """
         self.add_mols()
         if self.id_col is not None and self.id_col not in self.data.keys():
             self.id_col = None
@@ -245,14 +263,11 @@ class MolFrame(object):
     def info(self):
         """Show a summary of the MolFrame."""
         keys = list(self.data.columns)
-        if self.is_dask:
-            print("Dask DataFrame, Columns:", keys)
-        else:
-            info = []
-            for k in keys:
-                info.append({"Field": k, "Count": self.data[k].notna().count(), "Type": str(self.data[k].dtype)})
-            info.append({"Field": "Total", "Type": "", "Count": self.data.shape[0]})
-            return pd.DataFrame(info)
+        info = []
+        for k in keys:
+            info.append({"Field": k, "Count": self.data[k].notna().count(), "Type": str(self.data[k].dtype)})
+        info.append({"Field": "Total", "Type": "", "Count": self.data.shape[0]})
+        return pd.DataFrame(info)
 
 
     # kept for backwards compatibility
@@ -265,50 +280,11 @@ class MolFrame(object):
 
 
     def groupby(self, by=None, num_agg=["median", "mad", "count"], str_agg="unique"):
-        """Other str_aggs: "first", "unique"."""
-        def _concat(values):
-            return "; ".join(str(x) for x in values)
-
-        def _unique(values):
-            return "; ".join(set(str(x) for x in values))
-
         if by is None:
             by = self.id_col
-        if isinstance(num_agg, str):
-            num_agg = [num_agg]
-        df_keys = self.data.columns
-        numeric_cols = list(self.data.select_dtypes(include=[np.number]).columns)
-        str_cols = list(set(df_keys) - set(numeric_cols))
-        # if by in numeric_cols:
-        try:
-            by_pos = numeric_cols.index(by)
-            numeric_cols.pop(by_pos)
-        except ValueError:
-            pass
-        try:
-            by_pos = str_cols.index(by)
-            str_cols.pop(by_pos)
-        except ValueError:
-            pass
-        aggregation = {}
-        for k in numeric_cols:
-            aggregation[k] = num_agg
-        if str_agg == "join":
-            str_agg_method = _concat
-        elif str_agg == "first":
-            str_agg_method = "first"
-        elif str_agg == "unique":
-            str_agg_method = _unique
-        for k in str_cols:
-                aggregation[k] = str_agg_method
-        df = self.data.groupby(by)
-        df = df.agg(aggregation).reset_index()
-        df_cols = ["_".join(col).strip("_").replace("_<lambda>", "").replace("__unique", "")
-                   for col in df.columns.values]
-        df.columns = df_cols
         result = self.new()
-        result.data = df
-        print_log(df, "groupby")
+        result.data = groupby(self.data, by=by, num_agg=num_agg, str_agg=str_agg)
+        print_log(self.data, "groupby")
         return result
 
 
@@ -450,21 +426,23 @@ class MolFrame(object):
         Tries to use the Mol_b64 column. If that is not present, it uses Smiles.
         Only works when the data object is a Pandas DataFrame."""
         self.find_mol_col()
-        if force or not self.has_mols:
-            if self.inplace:
+        if self.inplace:
+            if force or not self.has_mols:
                 self.data[self.mol_col] = self.data[self.use_col].apply(self.mol_method)
                 self.has_mols = True
                 if remove_src:
                     self.data.drop(self.use_col, axis=1, inplace=True)
-            else:
-                result = self.new()
-                result.data = self.data
+                print_log(self.data, "add mols")
+        else:
+            result = self.new()
+            result.data = self.data
+            if force or not self.has_mols:
                 result.data[self.mol_col] = result.data[self.use_col].apply(self.mol_method)
                 result.has_mols = True
                 if remove_src:
                     result.data = result.data.drop(self.use_col, axis=1)
                 print_log(result.data, "add mols")
-                return result
+            return result
 
 
     def add_images(self, force=False):
@@ -834,6 +812,49 @@ class MolFrame(object):
         return scatter_plot(opts)
 
 
+def groupby(df_in, by=None, num_agg=["median", "mad", "count"], str_agg="unique"):
+    """Other str_aggs: "first", "unique"."""
+    def _concat(values):
+        return "; ".join(str(x) for x in values)
+
+    def _unique(values):
+        return "; ".join(set(str(x) for x in values))
+
+    if isinstance(num_agg, str):
+        num_agg = [num_agg]
+    df_keys = df_in.columns
+    numeric_cols = list(df_in.select_dtypes(include=[np.number]).columns)
+    str_cols = list(set(df_keys) - set(numeric_cols))
+    # if by in numeric_cols:
+    try:
+        by_pos = numeric_cols.index(by)
+        numeric_cols.pop(by_pos)
+    except ValueError:
+        pass
+    try:
+        by_pos = str_cols.index(by)
+        str_cols.pop(by_pos)
+    except ValueError:
+        pass
+    aggregation = {}
+    for k in numeric_cols:
+        aggregation[k] = num_agg
+    if str_agg == "join":
+        str_agg_method = _concat
+    elif str_agg == "first":
+        str_agg_method = "first"
+    elif str_agg == "unique":
+        str_agg_method = _unique
+    for k in str_cols:
+            aggregation[k] = str_agg_method
+    df = df_in.groupby(by)
+    df = df.agg(aggregation).reset_index()
+    df_cols = ["_".join(col).strip("_").replace("_<lambda>", "").replace("__unique", "")
+               for col in df.columns.values]
+    df.columns = df_cols
+    return df
+
+
 def get_value(str_val):
     """convert a string into float or int, if possible."""
     if not str_val:
@@ -888,46 +909,53 @@ def read_csv(fn, sep="\t"):
     return result
 
 
-def read_sdf(fn):
+def read_sdf(fn, gen2d=False):
     """Create a MolFrame instance from an SD file (can be gzipped (fn ends with ``.gz``))."""
     d = {}
-    do_close = True
-    if isinstance(fn, str):
-        if fn.endswith(".gz"):
-            file_obj = gzip.open(fn, mode="rb")
-        else:
-            file_obj = open(fn, "rb")
-    else:
-        file_obj = fn
-        do_close = False
+    ctr = 0
     first_mol = True
-    reader = Chem.ForwardSDMolSupplier(file_obj)
-    for ctr, mol in enumerate(reader, 1):
-        if not mol:
-            print(ctr, file=sys.stderr)
-            continue
-        if first_mol:
-            first_mol = False
+    if not isinstance(fn, list):
+        fn = [fn]
+    for f in fn:
+        do_close = True
+        if isinstance(f, str):
+            if f.endswith(".gz"):
+                file_obj = gzip.open(f, mode="rb")
+            else:
+                file_obj = open(f, "rb")
+        else:
+            file_obj = f
+            do_close = False
+        reader = Chem.ForwardSDMolSupplier(file_obj)
+        for mol in reader:
+            ctr += 1
+            if not mol:
+                print(ctr, file=sys.stderr)
+                continue
+            if first_mol:
+                first_mol = False
+                for prop in mol.GetPropNames():
+                    if prop in ["Mol_b64", "order"]: continue
+                    d[prop] = []
+                d_keys = set(d.keys())
+                d["Mol_b64"] = []
+            mol_props = set()
             for prop in mol.GetPropNames():
-                if prop in ["Mol_b64", "order"]: continue
-                d[prop] = []
-            d_keys = set(d.keys())
-            d["Mol_b64"] = []
-        mol_props = set()
-        for prop in mol.GetPropNames():
-            if prop in d_keys:
-                mol_props.add(prop)
-                d[prop].append(get_value(mol.GetProp(prop)))
-            mol.ClearProp(prop)
+                if prop in d_keys:
+                    mol_props.add(prop)
+                    d[prop].append(get_value(mol.GetProp(prop)))
+                mol.ClearProp(prop)
 
-        # append NAN to the missing props that were not in the mol:
-        missing_props = d_keys - mol_props
-        for prop in missing_props:
-            d[prop].append(np.nan)
-        mol_b64 = b64.b64encode(pickle.dumps(mol)).decode()
-        d["Mol_b64"].append(mol_b64)
-    if do_close:
-        file_obj.close()
+            # append NAN to the missing props that were not in the mol:
+            missing_props = d_keys - mol_props
+            for prop in missing_props:
+                d[prop].append(np.nan)
+            if gen2d:
+                check_2d_coords(mol, force=True)
+            mol_b64 = b64.b64encode(pickle.dumps(mol)).decode()
+            d["Mol_b64"].append(mol_b64)
+        if do_close:
+            file_obj.close()
     for k in d.keys():
         print(len(d[k]))
     result = MolFrame()
@@ -986,7 +1014,7 @@ def drop_cols(df, cols, inplace=False):
     Listed columns that are not present in the DataFrame are simply ignored
     (no error is thrown)."""
     if isinstance(cols, str):
-        cols = {cols}
+        cols = [cols]
     drop = set(cols).intersection(set(df.columns))
     if inplace:
         df.drop(drop, axis=1, inplace=True)
