@@ -81,6 +81,8 @@ def show_mols(mols_or_smiles, cols=4):
     html_list = ['<table align="center">']
     idx = 0
     row_line = []
+    if not isinstance(mols_or_smiles, list):
+        mols_or_smiles = [mols_or_smiles]
     for mol in mols_or_smiles:
         idx += 1
         img = mol_img_tag(mol)

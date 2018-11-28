@@ -90,11 +90,20 @@ class Progressbar():
                             """.format(self.bar_id, 100, self.eta_id, "done")))
 
 
-def listify(s, sep=" ", as_int=True):
+def listify(s, sep=None, as_int=True):
     """A helper func for the Jupyter Notebook,
     which generates a correctly formatted list out of pasted text."""
     to_number = int if as_int else float
     result = []
+    if sep is None:
+        if "\n" in s[:-2]:
+            sep = "\n"
+        elif "," in s[:-2]:
+            sep = ","
+        elif "\t" in s[:-2]:
+            sep = "\t"
+        else:
+            sep = " "
     if s.startswith("["):
         s = s[1:]
     if s.endswith("]"):
@@ -109,3 +118,8 @@ def listify(s, sep=" ", as_int=True):
             pass
         result.append(el)
     return result
+
+
+def print_list(lst):
+    for el in lst:
+        print(el)
