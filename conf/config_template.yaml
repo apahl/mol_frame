@@ -6,7 +6,7 @@
 # On Windows, put in $HOME/mol_frame/config.yaml
 # ----------------------------------------------------------------------------
 Paths:
-    SmilesPath: xxx_smiles_b64.tsv    # tab-delim.
+    SmilesPath: xxx_smiles.tsv    # tab-delim.
     SmilesCols:
         - Compound_Id
         - Smiles

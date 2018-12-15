@@ -31,7 +31,7 @@ import rdkit.Chem.Descriptors as Desc
 
 from mol_frame import nb_tools as nbt
 from mol_frame.viewers import df_html, view, show_grid, write_grid
-from mol_frame.mol_images import b64_mol
+from mol_frame.mol_images import b64_mol, check_2d_coords
 x = b64_mol  # make the linter shut up
 from mol_frame import tools as mft
 
@@ -46,14 +46,6 @@ try:
 except ImportError:
     AP_TOOLS = False
     print("{:45s} ({})".format(__name__, time.strftime("%y%m%d-%H:%M", time.localtime(op.getmtime(__file__)))))
-
-try:
-    # Try to import Avalon so it can be used for generation of 2d coordinates.
-    from rdkit.Avalon import pyAvalonTools as pyAv
-    USE_AVALON_2D = True
-except ImportError:
-    print("* Avalon not available. Using RDKit for 2d coordinate generation.")
-    USE_AVALON_2D = False
 
 try:
     import holoviews as hv
@@ -866,21 +858,6 @@ def get_value(str_val):
     except ValueError:
         val = str_val
     return val
-
-
-def check_2d_coords(mol, force=False):
-    """Check if a mol has 2D coordinates and if not, calculate them."""
-    if not force:
-        try:
-            mol.GetConformer()
-        except ValueError:
-            force = True  # no 2D coords... calculate them
-
-    if force:
-        if USE_AVALON_2D:
-            pyAv.Generate2DCoords(mol)
-        else:
-            mol.Compute2DCoords()
 
 
 def print_log(df, component, add_info=""):

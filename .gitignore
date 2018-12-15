@@ -6,6 +6,7 @@ tutorials/scatter_test.html
 doc/_build/
 doc/_static
 doc/_templates
+conf/config.yaml
 mol_frame/temp.py
 mol_frame/resource_paths.py
 *.pkl

@@ -13,6 +13,29 @@ try:
 except KeyError:  # Font "DejaVu Sans" is not available
     pass
 
+try:
+    # Try to import Avalon so it can be used for generation of 2d coordinates.
+    from rdkit.Avalon import pyAvalonTools as pyAv
+    USE_AVALON_2D = True
+except ImportError:
+    print("* Avalon not available. Using RDKit for 2d coordinate generation.")
+    USE_AVALON_2D = False
+
+
+def check_2d_coords(mol, force=False):
+    """Check if a mol has 2D coordinates and if not, calculate them."""
+    if not force:
+        try:
+            mol.GetConformer()
+        except ValueError:
+            force = True  # no 2D coords... calculate them
+
+    if force:
+        if USE_AVALON_2D:
+            pyAv.Generate2DCoords(mol)
+        else:
+            mol.Compute2DCoords()
+
 
 def make_transparent(img):
     img = img.convert("RGBA")
@@ -73,6 +96,7 @@ def b64_mol(mol, size=300, hlsss=None):
 def mol_img_tag(mol, size=300, options=None):
     if isinstance(mol, str):  # convert from Smiles on-the-fly, when necessary
         mol = Chem.MolFromSmiles(mol)
+        check_2d_coords(mol)
     tag = """<img {} src="data:image/png;base64,{}" alt="Mol"/>"""
     if options is None:
         options = ""
