@@ -1,4 +1,5 @@
 import time
+import pickle
 
 
 def is_interactive_ipython():
@@ -123,3 +124,16 @@ def listify(s, sep=None, as_int=True):
 def print_list(lst):
     for el in lst:
         print(el)
+
+
+def save_object(obj, fn="object.pkl"):
+    """Save a generic python object through pickling."""
+    with open(fn, "wb") as f:
+        pickle.dump(obj, f)
+
+
+def load_object(fn="object.pkl"):
+    """Load and return a previously pickled object."""
+    with open(fn, "rb") as f:
+        obj = pickle.load(f)
+    return obj

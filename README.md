@@ -1,4 +1,4 @@
-# Package MolFrames
+# MolFrames
 
 Working with Pandas DataFrames that can handle chemical structures.  
 
