@@ -331,6 +331,8 @@ def show_grid(df, title="MolFrame",
                      size=IMG_GRID_SIZE, **kwargs)
     if IPYTHON:
         return HTML(html)
+    else:
+        return html
 
 
 def rm_table_tag(tbl):

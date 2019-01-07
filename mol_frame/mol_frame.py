@@ -187,6 +187,19 @@ class MolFrame(object):
             print(result.__repr__())
 
 
+    def show_grid(self, include_smiles=False, title="MolFrame",
+                  drop=[], keep=[],
+                  smiles_col="Smiles", mol_col="Mol",
+                  id_col=None, b64_col=None, fp_col=None,
+                  **kwargs):
+        self.add_mols()
+        return show_grid(self.data, title=title, include_smiles=include_smiles,
+                         drop=drop, keep=keep,
+                         smiles_col=self.smiles_col, mol_col=self.mol_col, id_col=self.id_col,
+                         b64_col=self.b64_col, fp_col=self.fp_col,
+                         **kwargs)
+
+
     def write_tbl(self, title="MolFrame", include_smiles=False,
                   drop=[], keep=[], fn="molframe.html", **kwargs):
         """Known kwargs: selectable (bool), index (bool), intro (optional HTML text that will be inserted above the table)"""
