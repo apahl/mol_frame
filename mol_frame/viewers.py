@@ -13,10 +13,12 @@ Code is based on bluenote10's NimData html browser
 
 import os.path as op
 import time
-from string import Template
+
+# from string import Template
 
 import pandas as pd
-pd.set_option('display.max_colwidth', -1)
+
+pd.set_option("display.max_colwidth", -1)
 
 
 from mol_frame import templ
@@ -61,7 +63,9 @@ def _apply_link(input, link, ln_title="Link"):
     """input[0]: mol_img_tag
     input[1]: link_col value"""
     link_str = link.format(input[1])
-    result = '<a target="_blank" href="{}" title="{}">{}</a>'.format(link_str, ln_title, input[0])
+    result = '<a target="_blank" href="{}" title="{}">{}</a>'.format(
+        link_str, ln_title, input[0]
+    )
     return result
 
 
@@ -101,53 +105,19 @@ def show_mols(mols_or_smiles, cols=4):
     return HTML(table)
 
 
-def df_html(df, title="MolFrame", include_smiles=False,
-            drop=[], keep=[], **kwargs):
-    df = df.copy()
-    """Known kwargs: smiles_col, mol_col, id_col, b64_col, fp_col (str); index (bool)
-    link (has to contain "{}" to be replaced by link_col value), link_col, link_title"""
-    # ---- KW Args ----
-    smiles_col = kwargs.get("smiles_col", "Smiles")
-    mol_col = kwargs.get("mol_col", "Mol")
-    id_col = kwargs.get("id_col", "Compound_Id")
-    b64_col = kwargs.get("b64_col", "Mol_b64")
-    fp_col = kwargs.get("fp_col", "FP_b64")
-    index = kwargs.get("index", False)
-    link = kwargs.get("link", None)
-    drop.extend([b64_col, fp_col])
-    if not include_smiles:
-        drop.append(smiles_col)
-    if len(keep) > 0:
-        keep.append(mol_col)
-        df = df[keep]
-    keys = list(df.keys())
-    mol_col_pos = keys.index(mol_col)
-    keys.pop(mol_col_pos)
-    keys_sort = [mol_col]
-    if id_col in keys:
-        id_col_pos = keys.index(id_col)
-        keys_sort.append(id_col)
-        keys.pop(id_col_pos)
-    keys_sort.extend(keys)
-    df = df[keys_sort]
-    df[mol_col] = df[mol_col].apply(lambda x: _mol_img_tag(x))
-    if link is not None:
-        link_col = kwargs["link_col"]
-        link_title = kwargs.get("link_title", "Link")
-        df[mol_col] = df[[mol_col, link_col]].apply(lambda x: _apply_link(x, link, link_title),
-                                                    axis=1)
-    df = drop_cols(df, drop)
-    tbl = df.to_html(escape=False, index=index)
-    tbl = tbl.replace("<td>0    <img", "<td><img")
-    tbl = tbl.replace("dtype: object", "")
-    return tbl
-
-
-def html_grid(df, title="MolFrame",
-              drop=[], keep=[],
-              smiles_col="Smiles", mol_col="Mol",
-              id_col=None, b64_col=None, fp_col=None,
-              size=IMG_GRID_SIZE, **kwargs):
+def html_grid(
+    df,
+    title="MolFrame",
+    drop=[],
+    keep=[],
+    smiles_col="Smiles",
+    mol_col="Mol",
+    id_col=None,
+    b64_col=None,
+    fp_col=None,
+    size=IMG_GRID_SIZE,
+    **kwargs,
+):
     """Creates a HTML grid out of the MolFrame.data input.
 
     Parameters:
@@ -165,16 +135,20 @@ def html_grid(df, title="MolFrame",
     link_templ = kwargs.get("link_templ", None)
     link_col = kwargs.get("link_col", None)
     if link_col is not None:
-        interact = False  # interact is not avail. when clicking the image should open a link
+        interact = (
+            False
+        )  # interact is not avail. when clicking the image should open a link
     highlight = kwargs.get("highlight", None)
     mols_per_row = kwargs.get("mols_per_row", 4)
-    hlsss = kwargs.get("hlsss", None)  # colname with Smiles (,-separated) for Atom highlighting
+    hlsss = kwargs.get(
+        "hlsss", None
+    )  # colname with Smiles (,-separated) for Atom highlighting
     truncate = kwargs.get("truncate", 12)
     img_dir = None
     if len(keep) > 0:
         keep.append(mol_col)
         if id_col is not None and id_col not in keep:
-                keep.append(id_col)
+            keep.append(id_col)
         df = df[keep]
     drop.extend([smiles_col, b64_col, fp_col])
     df = drop_cols(df, drop)
@@ -222,8 +196,10 @@ def html_grid(df, title="MolFrame",
                 img_src = b64_mol(mol, size * 2, hlsss=hlsss_smi)
 
             if interact and guessed_id is not None:
-                img_opt = {"title": "Click to select / unselect",
-                           "onclick": "toggleCpd('{}')".format(id_prop_val)}
+                img_opt = {
+                    "title": "Click to select / unselect",
+                    "onclick": "toggleCpd('{}')".format(id_prop_val),
+                }
             elif link_col is not None:
 
                 img_opt = {"title": "Click to open link"}
@@ -233,7 +209,7 @@ def html_grid(df, title="MolFrame",
             else:
                 img_opt = {"title": str(img_id)}
 
-            img_opt["style"] = f'max-width: {size}px; max-height: {size}px;'
+            img_opt["style"] = f"max-width: {size}px; max-height: {size}px;"
             # img_opt["height"] = "{}px".format(size)
             cell = templ.img(img_src, img_opt)
             if link_col is not None:
@@ -264,8 +240,16 @@ def html_grid(df, title="MolFrame",
                 prop_val = ""
                 if prop in rec:
                     prop_val = str(rec[prop])
-                    if prop == "Pure_Flag" and prop_val != "" and prop_val != "n.d." and "Purity" in rec and "LCMS_Date" in rec:
-                        val_opt["title"] = "{}% ({})".format(rec["Purity"], rec["LCMS_Date"])
+                    if (
+                        prop == "Pure_Flag"
+                        and prop_val != ""
+                        and prop_val != "n.d."
+                        and "Purity" in rec
+                        and "LCMS_Date" in rec
+                    ):
+                        val_opt["title"] = "{}% ({})".format(
+                            rec["Purity"], rec["LCMS_Date"]
+                        )
                 prop_cells.extend(templ.td(prop[:25], prop_opt))
                 prop_cells.extend(templ.td(prop_val[:truncate], val_opt))
                 prop_row_cells[prop_no].extend(prop_cells)
@@ -298,18 +282,33 @@ def html_grid(df, title="MolFrame",
     return "".join(table_list)
 
 
-def write_grid(df, title="MolGrid",
-               fn="molgrid.html",
-               drop=[], keep=[],
-               smiles_col="Smiles", mol_col="Mol",
-               id_col=None, b64_col=None, fp_col=None,
-               **kwargs):
+def write_grid(
+    df,
+    title="MolGrid",
+    fn="molgrid.html",
+    drop=[],
+    keep=[],
+    smiles_col="Smiles",
+    mol_col="Mol",
+    id_col=None,
+    b64_col=None,
+    fp_col=None,
+    **kwargs,
+):
     """Write the html_grid to file and return the link."""
-    tbl = html_grid(df, title=title,
-                    drop=drop, keep=keep,
-                    smiles_col=smiles_col, mol_col=mol_col,
-                    id_col=id_col, b64_col=b64_col, fp_col=fp_col,
-                    size=IMG_GRID_SIZE, **kwargs)
+    tbl = html_grid(
+        df,
+        title=title,
+        drop=drop,
+        keep=keep,
+        smiles_col=smiles_col,
+        mol_col=mol_col,
+        id_col=id_col,
+        b64_col=b64_col,
+        fp_col=fp_col,
+        size=IMG_GRID_SIZE,
+        **kwargs,
+    )
     header = kwargs.get("header", None)
     summary = kwargs.get("summary", None)
     page = templ.page(tbl, title=title, header=header, summary=summary)
@@ -318,17 +317,32 @@ def write_grid(df, title="MolGrid",
         return HTML('<a href="{}">{}</a>'.format(fn, title))
 
 
-def show_grid(df, title="MolFrame",
-              drop=[], keep=[],
-              smiles_col="Smiles", mol_col="Mol",
-              id_col=None, b64_col=None, fp_col=None,
-              **kwargs):
+def show_grid(
+    df,
+    title="MolFrame",
+    drop=[],
+    keep=[],
+    smiles_col="Smiles",
+    mol_col="Mol",
+    id_col=None,
+    b64_col=None,
+    fp_col=None,
+    **kwargs,
+):
     """Show the html_grid to file and return the link."""
-    html = html_grid(df, title=title,
-                     drop=drop, keep=keep,
-                     smiles_col=smiles_col, mol_col=mol_col,
-                     id_col=id_col, b64_col=b64_col, fp_col=fp_col,
-                     size=IMG_GRID_SIZE, **kwargs)
+    html = html_grid(
+        df,
+        title=title,
+        drop=drop,
+        keep=keep,
+        smiles_col=smiles_col,
+        mol_col=mol_col,
+        id_col=id_col,
+        b64_col=b64_col,
+        fp_col=fp_col,
+        size=IMG_GRID_SIZE,
+        **kwargs,
+    )
     if IPYTHON:
         return HTML(html)
     else:
@@ -340,36 +354,6 @@ def rm_table_tag(tbl):
     tbl_list = tbl_list[1:-1]
     result = "\n".join(tbl_list)
     return result
-
-
-def view(df, title="MolFrame", include_smiles=False, drop=[], keep=[], fn="tmp.html", **kwargs):
-    """Known kwargs: smiles_col, mol_col, id_col, b64_col (str); selectable (bool), index (bool),
-        intro (text)"""
-    global SHOW_WARN
-    if "local" in LIB_LOCATION.lower() and op.isfile("lib/bootstrap.min.js"):
-        pandas_tbl = templ.PANDAS_TABLE_LOCAL
-    else:
-        pandas_tbl = templ.PANDAS_TABLE_NET
-        if SHOW_WARN:
-            SHOW_WARN = False
-            print("* using online libs for MolFrame browsing...")
-    intro = kwargs.get("intro", "")
-    tbl = df_html(df, title, include_smiles, drop, keep, **kwargs)
-    tbl = rm_table_tag(tbl)
-    templ_dict = {"title": title, "table": tbl, "intro": intro}
-
-    if kwargs.get("selectable", False):
-        templ_dict["selection_btn"] = templ.SELECTION_BTN
-        templ_dict["selection_js"] = templ.SELECTION_JS
-    else:
-        templ_dict["selection_btn"] = ""
-        templ_dict["selection_js"] = ""
-
-    t = Template(pandas_tbl)
-    html = t.substitute(templ_dict)
-    write(html, fn)
-    if IPYTHON:
-        return HTML('<a href="{}">{}</a>'.format(fn, title))
 
 
 def jsme(name="mol"):
@@ -388,4 +372,6 @@ def jsme(name="mol"):
 
     time_stamp = time.strftime("%y%m%d%H%M%S")
 
-    return HTML(templ.JSME_FORM.format(jsme_loc=JSME_LOCATION, ts=time_stamp, var_name=name))
+    return HTML(
+        templ.JSME_FORM.format(jsme_loc=JSME_LOCATION, ts=time_stamp, var_name=name)
+    )

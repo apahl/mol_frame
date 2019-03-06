@@ -19,6 +19,7 @@ import base64 as b64
 import os.path as op
 import tempfile
 from copy import deepcopy
+
 # from collections import Counter
 
 import pandas as pd
@@ -27,16 +28,19 @@ import numpy as np
 from rdkit.Chem import AllChem as Chem
 from rdkit import DataStructs
 import rdkit.Chem.Descriptors as Desc
+
 # from rdkit.Chem import Draw
 
 from mol_frame import nb_tools as nbt
-from mol_frame.viewers import df_html, view, show_grid, write_grid
+from mol_frame.viewers import show_grid, write_grid, mol_img_tag
 from mol_frame.mol_images import b64_mol, check_2d_coords
+
 x = b64_mol  # make the linter shut up
 from mol_frame import tools as mft
 
 try:
     from misc_tools import apl_tools
+
     AP_TOOLS = True
     #: Library version
     VERSION = apl_tools.get_commit(__file__)
@@ -45,17 +49,26 @@ try:
 
 except ImportError:
     AP_TOOLS = False
-    print("{:45s} ({})".format(__name__, time.strftime("%y%m%d-%H:%M", time.localtime(op.getmtime(__file__)))))
+    print(
+        "{:45s} ({})".format(
+            __name__,
+            time.strftime("%y%m%d-%H:%M", time.localtime(op.getmtime(__file__))),
+        )
+    )
 
 try:
     import holoviews as hv
+
     hv.extension("bokeh")
     from bokeh.models import HoverTool
+
     HOLOVIEWS = True
 
 except ImportError:
     HOLOVIEWS = False
-    print("* holoviews could not be imported. scatter() and struct_hover() are not available.")
+    print(
+        "* holoviews could not be imported. scatter() and struct_hover() are not available."
+    )
 
 
 IPYTHON = nbt.is_interactive_ipython()
@@ -67,20 +80,26 @@ if IPYTHON:
 DEBUG = False
 nbits = 1024
 FPDICT = {}
-FPDICT['ecfp0'] = lambda m: Chem.GetMorganFingerprintAsBitVect(m, 0, nBits=nbits)
-FPDICT['ecfp2'] = lambda m: Chem.GetMorganFingerprintAsBitVect(m, 1, nBits=nbits)
-FPDICT['ecfp4'] = lambda m: Chem.GetMorganFingerprintAsBitVect(m, 2, nBits=nbits)
-FPDICT['ecfp6'] = lambda m: Chem.GetMorganFingerprintAsBitVect(m, 3, nBits=nbits)
-FPDICT['ecfc0'] = lambda m: Chem.GetMorganFingerprint(m, 0)
-FPDICT['ecfc2'] = lambda m: Chem.GetMorganFingerprint(m, 1)
-FPDICT['ecfc4'] = lambda m: Chem.GetMorganFingerprint(m, 2)
-FPDICT['ecfc6'] = lambda m: Chem.GetMorganFingerprint(m, 3)
-FPDICT['fcfp2'] = lambda m: Chem.GetMorganFingerprintAsBitVect(m, 1, useFeatures=True, nBits=nbits)
-FPDICT['fcfp4'] = lambda m: Chem.GetMorganFingerprintAsBitVect(m, 2, useFeatures=True, nBits=nbits)
-FPDICT['fcfp6'] = lambda m: Chem.GetMorganFingerprintAsBitVect(m, 3, useFeatures=True, nBits=nbits)
-FPDICT['fcfc2'] = lambda m: Chem.GetMorganFingerprint(m, 1, useFeatures=True)
-FPDICT['fcfc4'] = lambda m: Chem.GetMorganFingerprint(m, 2, useFeatures=True)
-FPDICT['fcfc6'] = lambda m: Chem.GetMorganFingerprint(m, 3, useFeatures=True)
+FPDICT["ecfp0"] = lambda m: Chem.GetMorganFingerprintAsBitVect(m, 0, nBits=nbits)
+FPDICT["ecfp2"] = lambda m: Chem.GetMorganFingerprintAsBitVect(m, 1, nBits=nbits)
+FPDICT["ecfp4"] = lambda m: Chem.GetMorganFingerprintAsBitVect(m, 2, nBits=nbits)
+FPDICT["ecfp6"] = lambda m: Chem.GetMorganFingerprintAsBitVect(m, 3, nBits=nbits)
+FPDICT["ecfc0"] = lambda m: Chem.GetMorganFingerprint(m, 0)
+FPDICT["ecfc2"] = lambda m: Chem.GetMorganFingerprint(m, 1)
+FPDICT["ecfc4"] = lambda m: Chem.GetMorganFingerprint(m, 2)
+FPDICT["ecfc6"] = lambda m: Chem.GetMorganFingerprint(m, 3)
+FPDICT["fcfp2"] = lambda m: Chem.GetMorganFingerprintAsBitVect(
+    m, 1, useFeatures=True, nBits=nbits
+)
+FPDICT["fcfp4"] = lambda m: Chem.GetMorganFingerprintAsBitVect(
+    m, 2, useFeatures=True, nBits=nbits
+)
+FPDICT["fcfp6"] = lambda m: Chem.GetMorganFingerprintAsBitVect(
+    m, 3, useFeatures=True, nBits=nbits
+)
+FPDICT["fcfc2"] = lambda m: Chem.GetMorganFingerprint(m, 1, useFeatures=True)
+FPDICT["fcfc4"] = lambda m: Chem.GetMorganFingerprint(m, 2, useFeatures=True)
+FPDICT["fcfc6"] = lambda m: Chem.GetMorganFingerprint(m, 3, useFeatures=True)
 
 
 def debug_print(txt, val):
@@ -91,6 +110,7 @@ def debug_print(txt, val):
 
 class MolFrame(object):
     """A wrapper class around Pandas DataFrame with added structure handling capabilities."""
+
     def __init__(self, init=None, log=True):
         if init is None:
             self.data = None
@@ -105,7 +125,6 @@ class MolFrame(object):
         self.fp_col = "FP_b64"
         self.fp_name = ""  # Fingerprint method, e.g. ecfc4
 
-
     def _pass_properties(self, mol_frame):
         mol_frame.inplace = self.inplace
         mol_frame.has_mols = self.has_mols
@@ -115,7 +134,6 @@ class MolFrame(object):
         mol_frame.b64_col = self.b64_col
         mol_frame.fp_col = self.fp_col
         mol_frame.fp_name = self.fp_name
-
 
     def __getitem__(self, key):
         res = self.data[key]
@@ -127,19 +145,17 @@ class MolFrame(object):
             result = res
         return result
 
-
     def __setitem__(self, key, item):
         self.data[key] = item
-
 
     def print_log(self, component, add_info=""):
         if self.log:
             print_log(self.data, component, add_info)
 
-
     def __getattr__(self, name):
         """Try to call undefined methods on the underlying pandas DataFrame."""
         if hasattr(self.data, name):
+
             def method(*args, **kwargs):
                 res = getattr(self.data, name)(*args, **kwargs)
                 if isinstance(res, pd.DataFrame):
@@ -149,70 +165,104 @@ class MolFrame(object):
                 else:
                     result = res
                 return result
+
             return method
         else:
             raise AttributeError
-
 
     def _repr_html_(self):
         drop = [self.b64_col, self.mol_col, "Image"]
         result = drop_cols(self.data, drop)
         return result.to_html()
 
-
     def new(self):
         result = MolFrame()
         self._pass_properties(result)
         return result
-
 
     def copy(self):
         result = self.new()
         result.data = self.data.copy()
         return result
 
+    def mol_img_tag(self, x):
+        if self.use_col is None:
+            self.find_mol_col()
+        mol = self.mol_method(x)
+        return mol_img_tag(mol)
 
-    def show(self, include_smiles=False, drop=[], **kwargs):
-        if IPYTHON:
-            self.add_mols()
-            tmp = self.copy()
-            if not include_smiles:
-                drop.append(tmp.smiles_col)
-            if len(drop) > 0:
-                tmp.drop_cols(drop)
-            return HTML(df_html(tmp.data, include_smiles=include_smiles))
-        else:
-            drop = [self.b64_col, self.mol_col, "Image"]
-            result = drop_cols(self.data, drop)
-            print(result.__repr__())
+    def to_html(self, **kwargs):
+        """New table display, relying on pd.to_html and formatters.
+        The `Molecule` column is put first.
 
+        Known kwargs:
+            formatters (dict or None)
+            escape (bool): Default is False.
+            index (bool): Whether to display the index or not, default is False.
+            rename_mol_col (bool): Default is True."""
+        self.find_mol_col()
+        formatters = {self.use_col: self.mol_img_tag}
+        formatters.update(kwargs.pop("formatters", {}))
+        escape = kwargs.pop("escape", False)
+        index = kwargs.pop("index", False)
+        rename_mol_col = kwargs.pop("rename_mol_col", True)
+        columns = list(self.data.columns)
+        columns = [columns.pop(columns.index(self.use_col))] + columns
+        self.data = self.data[columns]
+        result = self.data.to_html(formatters=formatters, escape=escape, index=index, **kwargs)
+        if rename_mol_col:
+            result = result.replace(f">{self.use_col}</th>", ">Molecule</th>")
+        return result
 
-    def show_grid(self, include_smiles=False, title="MolFrame",
-                  drop=[], keep=[],
-                  smiles_col="Smiles", mol_col="Mol",
-                  id_col=None, b64_col=None, fp_col=None,
-                  **kwargs):
+    def show(self, **kwargs):
+        """New table display, relying on pd.to_html and formatters.
+
+        Known kwargs:
+            formatters (dict or None)
+            escape (bool)
+            rename_mol_col (bool)"""
+        return HTML(self.to_html(**kwargs))
+
+    def show_grid(
+        self,
+        include_smiles=False,
+        title="MolFrame",
+        drop=[],
+        keep=[],
+        smiles_col="Smiles",
+        mol_col="Mol",
+        id_col=None,
+        b64_col=None,
+        fp_col=None,
+        **kwargs
+    ):
         self.add_mols()
-        return show_grid(self.data, title=title, include_smiles=include_smiles,
-                         drop=drop, keep=keep,
-                         smiles_col=self.smiles_col, mol_col=self.mol_col, id_col=self.id_col,
-                         b64_col=self.b64_col, fp_col=self.fp_col,
-                         **kwargs)
+        return show_grid(
+            self.data,
+            title=title,
+            include_smiles=include_smiles,
+            drop=drop,
+            keep=keep,
+            smiles_col=self.smiles_col,
+            mol_col=self.mol_col,
+            id_col=self.id_col,
+            b64_col=self.b64_col,
+            fp_col=self.fp_col,
+            **kwargs
+        )
 
-
-    def write_tbl(self, title="MolFrame", include_smiles=False,
-                  drop=[], keep=[], fn="molframe.html", **kwargs):
+    def write_tbl(
+        self,
+        title="MolFrame",
+        fn="molframe.html",
+        **kwargs
+    ):
         """Known kwargs: selectable (bool), index (bool), intro (optional HTML text that will be inserted above the table)"""
-        self.add_mols()
-        return view(self.data, title=title, include_smiles=include_smiles,
-                    drop=drop, keep=keep, fn=fn,
-                    smiles_col=self.smiles_col, mol_col=self.mol_col, id_col=self.id_col,
-                    b64_col=self.b64_col, fp_col=self.fp_col,
-                    **kwargs)
+        pass
 
-
-    def write_grid(self, title="MolGrid",
-                   drop=[], keep=[], fn="molgrid.html", **kwargs):
+    def write_grid(
+        self, title="MolGrid", drop=[], keep=[], fn="molgrid.html", **kwargs
+    ):
         """Known kwargs: interactive (bool)
                          highlight (dict)
                          header (str)
@@ -241,15 +291,21 @@ class MolFrame(object):
         self.add_mols()
         if self.id_col is not None and self.id_col not in self.data.keys():
             self.id_col = None
-        return write_grid(self.data, title=title,
-                          drop=drop, keep=keep, fn=fn,
-                          smiles_col=self.smiles_col, mol_col=self.mol_col, id_col=self.id_col,
-                          b64_col=self.b64_col, fp_col=self.fp_col,
-                          **kwargs)
+        return write_grid(
+            self.data,
+            title=title,
+            drop=drop,
+            keep=keep,
+            fn=fn,
+            smiles_col=self.smiles_col,
+            mol_col=self.mol_col,
+            id_col=self.id_col,
+            b64_col=self.b64_col,
+            fp_col=self.fp_col,
+            **kwargs
+        )
 
-
-    def grid(self, title="MolGrid",
-             drop=[], keep=[], fn="molgrid.html", **kwargs):
+    def grid(self, title="MolGrid", drop=[], keep=[], fn="molgrid.html", **kwargs):
         """Known kwargs: interactive (bool)
                          highlight (dict)
                          hlsss (colname)
@@ -257,32 +313,42 @@ class MolFrame(object):
         self.add_mols()
         if self.id_col is not None and self.id_col not in self.data.keys():
             self.id_col = None
-        return show_grid(self.data, title=title,
-                         drop=drop, keep=keep, fn=fn,
-                         smiles_col=self.smiles_col, mol_col=self.mol_col, id_col=self.id_col,
-                         b64_col=self.b64_col, fp_col=self.fp_col,
-                         **kwargs)
-
-
+        return show_grid(
+            self.data,
+            title=title,
+            drop=drop,
+            keep=keep,
+            fn=fn,
+            smiles_col=self.smiles_col,
+            mol_col=self.mol_col,
+            id_col=self.id_col,
+            b64_col=self.b64_col,
+            fp_col=self.fp_col,
+            **kwargs
+        )
 
     def info(self):
         """Show a summary of the MolFrame."""
         keys = list(self.data.columns)
         info = []
         for k in keys:
-            info.append({"Field": k, "Count": self.data[k].notna().count(), "Type": str(self.data[k].dtype)})
+            info.append(
+                {
+                    "Field": k,
+                    "Count": self.data[k].notna().count(),
+                    "Type": str(self.data[k].dtype),
+                }
+            )
         info.append({"Field": "Total", "Type": "", "Count": self.data.shape[0]})
         return pd.DataFrame(info)
 
-
-    # kept for backwards compatibility
     def compute(self):
+        """Kept for backwards compatibility."""
         df = self.data.copy()
         result = self.new()
         result.data = df
         print_log(df, "compute")
         return result
-
 
     def groupby(self, by=None, num_agg=["median", "mad", "count"], str_agg="unique"):
         if by is None:
@@ -291,7 +357,6 @@ class MolFrame(object):
         result.data = groupby(self.data, by=by, num_agg=num_agg, str_agg=str_agg)
         print_log(self.data, "groupby")
         return result
-
 
     def concat(self, other):
         if hasattr(other, "data"):  # a MolFrame instance
@@ -302,7 +367,6 @@ class MolFrame(object):
         result.data = pd.concat([self.data, df])
         print_log(result.data, "concat")
         return result
-
 
     def keep_cols(self, cols):
         """Keeps the list of columns of the DataFrame.
@@ -316,7 +380,6 @@ class MolFrame(object):
             result.data = keep_cols(self.data, cols, inplace=False)
             print_log(result.data, "keep cols")
             return result
-
 
     def drop_cols(self, cols):
         """Drops the list of columns from the DataFrame.
@@ -335,13 +398,11 @@ class MolFrame(object):
             print_log(result.data, "drop cols")
             return result
 
-
     def read_csv(self, fn, sep="\t"):
         """Read one or multiple result files and concatenate them into one MolFrame.
         ``fn`` is a single filename (string) or a list of filenames."""
         self.data = read_csv(fn, sep=sep).data
         self.print_log("read CSV")
-
 
     def write_csv(self, fn, parameters=None, sep="\t"):
         result = self.data
@@ -350,7 +411,6 @@ class MolFrame(object):
             result = result[parameters]
         result.to_csv(fn, sep=sep, index=False)
 
-
     def write_tmp(self, parameters=None):
         """Write the Mol_Frame to a temporary file. Returns the filename.
         Can be re-openend with mf.read_csv(fn)."""
@@ -358,10 +418,12 @@ class MolFrame(object):
             glob_str = "-*"
         else:
             glob_str = ""  # single file
-        fn = op.join(tempfile.gettempdir(), "mf_{}{}.tmp".format(time.strftime("%Y-%m-%d_%H%M%S"), glob_str))
+        fn = op.join(
+            tempfile.gettempdir(),
+            "mf_{}{}.tmp".format(time.strftime("%Y-%m-%d_%H%M%S"), glob_str),
+        )
         self.write_csv(fn, parameters=parameters, sep="\t")
         return fn
-
 
     def write_pkl(self, fn):
         """Only works when the data object is a Pandas DataFrame."""
@@ -374,11 +436,10 @@ class MolFrame(object):
             self.b64_col,
             self.fp_col,
             self.fp_name,
-            self.data
+            self.data,
         ]
         with open(fn, "wb") as f:
             pickle.dump(pkl, f)
-
 
     def write_sdf(self, fn):
         """Only works when the data object is a Pandas DataFrame."""
@@ -397,7 +458,6 @@ class MolFrame(object):
             writer.write(mol)
         writer.close()
 
-
     def remove_mols(self):
         """Remove the mol objects from the MolFrame."""
         if self.inplace:
@@ -409,7 +469,6 @@ class MolFrame(object):
             result.has_mols = False
             print_log(result.data, "remove mols")
             return result
-
 
     def remove_smiles_and_b64(self):
         """Remove the Smiles and Mol_b64 columns from the MolFrame, if present."""
@@ -424,7 +483,6 @@ class MolFrame(object):
             result.data = self.data.drop(drop, axis=1)
             print_log(result.data, "drop cols")
             return result
-
 
     def add_mols(self, force=False, remove_src=False):
         """Adds mol objects to the MolFrame.
@@ -442,13 +500,14 @@ class MolFrame(object):
             result = self.new()
             result.data = self.data
             if force or not self.has_mols:
-                result.data[self.mol_col] = result.data[self.use_col].apply(self.mol_method)
+                result.data[self.mol_col] = result.data[self.use_col].apply(
+                    self.mol_method
+                )
                 result.has_mols = True
                 if remove_src:
                     result.data = result.data.drop(self.use_col, axis=1)
                 print_log(result.data, "add mols")
             return result
-
 
     def add_images(self, force=False):
         """Adds an Image column to the MolFrame, used for structure tooltips in plotting.
@@ -477,9 +536,9 @@ class MolFrame(object):
             print_log(result.data, "add img")
             return result
 
-
     def add_smiles(self, isomeric_smiles=True):
         """Adds Smiles column from mol objects to the MolFrame."""
+
         def _smiles_from_mol(mol):
             return Chem.MolToSmiles(mol, isomericSmiles=isomeric_smiles)
 
@@ -489,7 +548,6 @@ class MolFrame(object):
             result = self.apply_to_mol(self.smiles_col, _smiles_from_mol)
             print_log(result.data, "add smiles")
             return result
-
 
     def add_fp(self, fp_name="ecfc4"):
         """Adds a fingerprint column to the MolFrame.
@@ -510,9 +568,9 @@ class MolFrame(object):
             print_log(result.data, "add fp")
             return result
 
-
     def add_b64(self):
         """Adds Mol_b64 column to MolFrame."""
+
         def _b64_from_mol(mol):
             result = b64.b64encode(pickle.dumps(mol)).decode()
             return result
@@ -523,7 +581,6 @@ class MolFrame(object):
             result = self.apply_to_mol(self.b64_col, _b64_from_mol)
             print_log(result.data, "add b64")
             return result
-
 
     def find_mol_col(self):
         """Find a suitable mol column.
@@ -542,7 +599,6 @@ class MolFrame(object):
             self.mol_method = lambda x: mol_from_smiles(x)
         else:
             raise KeyError("No suitable Mol column found.")
-
 
     def apply_to_col(self, col_name, new_col_name, lambda_func):
         """Applies a func to a column in the MolFrame.
@@ -570,7 +626,6 @@ class MolFrame(object):
             if show_prog:
                 pb.done()
             return result
-
 
     def apply_to_mol(self, new_col_name, lambda_func):
         """Applies a func to the Mol object, which is generated on-the-fly, if necessary.
@@ -603,16 +658,14 @@ class MolFrame(object):
                 pb.done()
             return result
 
-
     def apply_numeric(self):
         """Apply pd.numeric."""
         if self.inplace:
-            self.data.apply(pd.to_numeric, errors='ignore', axis=1)
+            self.data.apply(pd.to_numeric, errors="ignore", axis=1)
         else:
             result = self.new()
-            result.data = self.data.apply(pd.to_numeric, errors='ignore', axis=1)
+            result.data = self.data.apply(pd.to_numeric, errors="ignore", axis=1)
             return result
-
 
     def check_2d_coords(self, force=False):
         """Generates 2D coordinates if necessary.
@@ -649,8 +702,9 @@ class MolFrame(object):
             if show_prog:
                 pb.inc()
             tm = np.zeros((4, 4), np.double)
-            for i in range(3): tm[i, i] = f
-            tm[3, 3] = 1.
+            for i in range(3):
+                tm[i, i] = f
+            tm[3, 3] = 1.0
             Chem.TransformMol(m, tm)
 
         self.find_mol_col()
@@ -661,22 +715,24 @@ class MolFrame(object):
             show_prog = False
 
         if self.inplace:
-            if not self.has_mols: return
+            if not self.has_mols:
+                return
             self.data[self.use_col].apply(_transform)
         else:
             result = self.copy()
             result.use_col = self.use_col
             result.mol_method = self.mol_method
-            if not self.has_mols: return result
+            if not self.has_mols:
+                return result
             result.data[self.use_col].apply(_transform)
             if show_prog:
                 pb.done()
             return result
 
-
     def keep_largest_fragment(self):
         """Removes salts, etc.
         Returns the new molecules as SmilesFrag Column."""
+
         def _largest_frag(mol):
             mols = Chem.GetMolFrags(mol, asMols=True)
             if len(mols) > 1:
@@ -696,7 +752,6 @@ class MolFrame(object):
             print("* fragments removed in {} molecules.".format(frag_ctr[0]))
             return result
 
-
     def id_filter(self, cpd_ids, reset_index=True, sort_by_input=False):
         """Returns a new MolFrame instance consisting only of the given cpd_ids.
         When ``sort_by_input == True``, the lines in the new MolFrame will have the same order
@@ -712,14 +767,15 @@ class MolFrame(object):
             if self.is_dask:
                 print("  - computing Pandas DataFrame...")
                 df = df.compute()
-            df["_sort"] = pd.Categorical(df[self.id_col], categories=cpd_ids, ordered=True)
+            df["_sort"] = pd.Categorical(
+                df[self.id_col], categories=cpd_ids, ordered=True
+            )
             df = df.sort_values("_sort")
             df.drop("_sort", axis=1, inplace=False)
         result = self.new()
         result.data = df
         print_log(result.data, "id filter")
         return result
-
 
     def mol_filter(self, query, add_h=False):
         """Substructure filter. Returns a new MolFrame instance.
@@ -741,7 +797,8 @@ class MolFrame(object):
             if show_prog:
                 pb.inc()
             mol = self.mol_method(rec[self.use_col])
-            if not mol: continue
+            if not mol:
+                continue
             hit = False
             if add_h:
                 mol_with_h = Chem.AddHs(mol)
@@ -759,13 +816,14 @@ class MolFrame(object):
         print_log(result.data, "mol_filter")
         return result
 
-
     def sim_filter(self, query, cutoff=0.75):
         """Similarity filter. Returns a new MolFrame instance.
         Add a suitable fingerprint once with addf_fps(),
         then give a reference molecule or a SMILES string as query."""
         if len(self.fp_name) == 0 or self.fp_col not in self.data.columns:
-            raise KeyError("No fingerprints found. Please generate them first with add_fp().")
+            raise KeyError(
+                "No fingerprints found. Please generate them first with add_fp()."
+            )
         if len(self.data) > 5000:
             show_prog = True
             pb = nbt.Progressbar(end=len(self.data))
@@ -795,8 +853,16 @@ class MolFrame(object):
             pb.done()
         return result
 
-
-    def scatter(self, x, y, colorby=None, options={}, styles={}, title="Scatter Plot", force=False):
+    def scatter(
+        self,
+        x,
+        y,
+        colorby=None,
+        options={},
+        styles={},
+        title="Scatter Plot",
+        force=False,
+    ):
         """Possible options: width, height, legend_position [e.g. "top_right"]
         Possible styles: size, cmap [brg, Accent, rainbow, jet, flag, Wistia]
         Only works when the data object is a Pandas DataFrame."""
@@ -804,7 +870,12 @@ class MolFrame(object):
             print("* HoloViews not available.")
             return None
         hover = struct_hover(self, force=force)
-        plot_options = {"width": 800, "height": 450, "legend_position": "top_left", "tools": [hover]}
+        plot_options = {
+            "width": 800,
+            "height": 450,
+            "legend_position": "top_left",
+            "tools": [hover],
+        }
         plot_styles = {"size": 8, "cmap": "brg"}
         plot_options.update(options)
         plot_styles.update(styles)
@@ -812,13 +883,14 @@ class MolFrame(object):
         if colorby is not None:
             vdims.append(colorby)
             plot_options["color_index"] = len(vdims)
-        opts = {'Scatter': {'plot': plot_options, "style": plot_styles}}
+        opts = {"Scatter": {"plot": plot_options, "style": plot_styles}}
         scatter_plot = hv.Scatter(self.data, x, vdims=vdims, label=title)
         return scatter_plot(opts)
 
 
 def groupby(df_in, by=None, num_agg=["median", "mad", "count"], str_agg="unique"):
     """Other str_aggs: "first", "unique"."""
+
     def _concat(values):
         return "; ".join(str(x) for x in values)
 
@@ -851,11 +923,13 @@ def groupby(df_in, by=None, num_agg=["median", "mad", "count"], str_agg="unique"
     elif str_agg == "unique":
         str_agg_method = _unique
     for k in str_cols:
-            aggregation[k] = str_agg_method
+        aggregation[k] = str_agg_method
     df = df_in.groupby(by)
     df = df.agg(aggregation).reset_index()
-    df_cols = ["_".join(col).strip("_").replace("_<lambda>", "").replace("__unique", "")
-               for col in df.columns.values]
+    df_cols = [
+        "_".join(col).strip("_").replace("_<lambda>", "").replace("__unique", "")
+        for col in df.columns.values
+    ]
     df.columns = df_cols
     return df
 
@@ -878,7 +952,11 @@ def print_log(df, component, add_info=""):
     if len(add_info) > 0:
         add_info = "    ({})".format(add_info)
     if hasattr(df, "shape"):
-        print("* {:22s} ({:5d} | {:4d}){}".format(component, df.shape[0], df.shape[1], add_info))
+        print(
+            "* {:22s} ({:5d} | {:4d}){}".format(
+                component, df.shape[0], df.shape[1], add_info
+            )
+        )
     else:
         print("* {:22s} (Dask  | {:4d}){}".format(component, len(df.columns), add_info))
 
@@ -925,7 +1003,8 @@ def read_sdf(fn, gen2d=False):
             if first_mol:
                 first_mol = False
                 for prop in mol.GetPropNames():
-                    if prop in ["Mol_b64", "order"]: continue
+                    if prop in ["Mol_b64", "order"]:
+                        continue
                     d[prop] = []
                 d_keys = set(d.keys())
                 d["Mol_b64"] = []
@@ -1048,6 +1127,8 @@ def struct_hover(mf, force=False):
                     <span style="font-size: 12px; font-weight: bold;">@{}</span>
                 </div>
             </div>
-        """.format(mf.id_col)
+        """.format(
+            mf.id_col
+        )
     )
     return hover
