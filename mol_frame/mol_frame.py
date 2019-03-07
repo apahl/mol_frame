@@ -31,7 +31,7 @@ import rdkit.Chem.Descriptors as Desc
 
 # from rdkit.Chem import Draw
 
-from mol_frame import nb_tools as nbt
+from mol_frame import nb_tools as nbt, templ
 from mol_frame.viewers import show_grid, write_grid, mol_img_tag
 from mol_frame.mol_images import b64_mol, check_2d_coords
 
@@ -219,7 +219,8 @@ class MolFrame(object):
 
         Known kwargs:
             formatters (dict or None)
-            escape (bool)
+            escape (bool): Default is False.
+            index (bool): Whether to display the index or not, default is False.
             rename_mol_col (bool)"""
         return HTML(self.to_html(**kwargs))
 
@@ -257,11 +258,34 @@ class MolFrame(object):
         fn="molframe.html",
         **kwargs
     ):
-        """Known kwargs: selectable (bool), index (bool), intro (optional HTML text that will be inserted above the table)"""
-        pass
+        """Known kwargs:
+            selectable (bool); Currently without function
+            index (bool): Whether to show the index or not, default is False.
+            intro (str): Optional HTML text that will be inserted above the table.
+            format (str): Formatting used for the table. Available options: ``simple``, ``bootstrap``.
+            formatters (dict or None)
+            escape (bool): Default is False.
+            rename_mol_col (bool): Default is True."""
+        tbl_format = kwargs.pop("format", "bootstrap").lower()
+        intro = kwargs.pop("intro", "")
+        if "boot" in tbl_format:
+            # Bootstrap does not seem to play nicely with the pandas index:
+            kwargs["index"] = False
+        table = self.to_html(**kwargs)
+        if "boot" in tbl_format:
+            table = table.replace('<table border="1" class="dataframe">', '<table border="1" data-toggle="table">')
+            t = templ.MFTemplate(templ.TABLE_BOOTSTRAP)
+        else:
+            print("* simple format used.")
+            t = templ.MFTemplate(templ.TABLE_SIMPLE)
+        d = {"title": title, "intro": intro, "table": table}
+        page = t.substitute(d)
+        templ.write(page, fn)
+        if IPYTHON:
+            return HTML(f'<a href="{fn}">{title}</a>')
 
     def write_grid(
-        self, title="MolGrid", drop=[], keep=[], fn="molgrid.html", **kwargs
+        self, title="MolGrid", fn="molgrid.html", **kwargs
     ):
         """Known kwargs: interactive (bool)
                          highlight (dict)
@@ -294,8 +318,6 @@ class MolFrame(object):
         return write_grid(
             self.data,
             title=title,
-            drop=drop,
-            keep=keep,
             fn=fn,
             smiles_col=self.smiles_col,
             mol_col=self.mol_col,

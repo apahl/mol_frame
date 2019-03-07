@@ -17,8 +17,18 @@ class PreTemplate(Template):
     delimiter = "§"
 
 
-TABLE_OPTIONS = {"cellspacing": "1", "cellpadding": "1", "border": "1",
-                 "align": "", "height": "60px", "summary": "Table", }  # "width": "800px",
+class MFTemplate(Template):
+    delimiter = "$$$"
+
+
+TABLE_OPTIONS = {
+    "cellspacing": "1",
+    "cellpadding": "1",
+    "border": "1",
+    "align": "",
+    "height": "60px",
+    "summary": "Table",
+}  # "width": "800px",
 
 # PAGE_OPTIONS = {"icon": "icons/chart_bar.png", "css": ["css/style.css", "css/collapsible_list.css"],
 #                 "scripts": ["lib/jquery.js", "lib/highcharts.js", "script/folding.js"]}
@@ -27,112 +37,76 @@ JSME = "lib/jsme/jsme.nocache.js"
 
 HTML_FILE_NAME = "mol_table.html"
 
-STYLESHEETS_LOCAL = """<link rel="stylesheet" href="lib/css/jquery.dataTables.min.css">
-    <link rel="stylesheet" href="lib/css/bootstrap1.min.css">
-    <link rel="stylesheet" href="lib/css/bootstrap2.min.css">
-    <link rel="stylesheet" href="lib/css/fixedHeader.dataTables.min.css">
-    """
-# <link rel="stylesheet" href="lib/css/bootstrap-theme.min.css">
-JS_LIBS_LOCAL = """    <!-- jQuery -->
-    <script src="lib/jquery.min.js"></script>
-    <!-- Popper -->
-    <script src="lib/popper.js"></script>
-    <!-- Bootstrap -->
-    <script src="lib/bootstrap.min.js"></script>
-    <!-- Data Table -->
-    <script src="lib/jquery.dataTables.min.js"></script>
-    <script src="lib/dataTables.fixedHeader.min.js"></script>"""
-
-STYLESHEETS_NET = """<link rel="stylesheet" href="https://cdn.datatables.net/1.10.16/css/jquery.dataTables.min.css">
-    <link rel="stylesheet" href="https://bootswatch.com/cosmo/bootstrap.min.css">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdn.datatables.net/fixedheader/3.1.3/css/fixedHeader.dataTables.min.css" crossorigin="anonymous">
-"""
-
-JS_LIBS_NET = """<!-- jQuery -->
-    <script
-    src="https://code.jquery.com/jquery-3.2.1.min.js"
-    integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
-    crossorigin="anonymous"></script>
-    <!-- Popper -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.5/esm/popper.min.js"></script>
-    <!-- Bootstrap -->
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js" integrity="sha384-h0AbiXch4ZDo7tp9hKZ4TsHbi047NrKGLO3SEJAg45jXxnGIfYzk4Si90RDIqNm1" crossorigin="anonymous"></script>
-    <!-- Data Table -->
-    <script src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/fixedheader/3.1.3/js/dataTables.fixedHeader.min.js"></script>"""
-
-
-SELECTION_BTN = """<button id="show_sel">Selected Ids</button>"""
-
-SELECTION_JS = """
-    <script>
-    $(document).ready(function() {
-      var table = $('#maintable').DataTable();
-
-      $('#maintable tbody').on( 'click', 'tr', function () {
-          $(this).toggleClass('selected');
-      } );
-
-      $('#show_sel').click( function () {
-          var id_arr = [];
-          var rows = table.rows('.selected').data()
-          $.each($(rows), function(idx, row){
-              id_arr.push(row[1]);
-          });
-          alert( id_arr );
-      } );
-    } );
-    </script>"""
-
-PANDAS_TABLE = """
-<!DOCTYPE html>
-<html>
+TABLE_BOOTSTRAP = """
+<!doctype html>
+<html lang="en">
   <head>
+    <!-- Required meta tags -->
     <meta charset="utf-8">
-    <title>$title</title>
-    §style_sheets
-    <style>
-      .custom {
-        font-size: 14px;
-      }
-      .bottomcustom, .topcustom {
-        font-size: 10px;
-      }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.14.1/dist/bootstrap-table.min.css">
+
+    <title>$$$title</title>
   </head>
   <body>
-    <div class=custom>$intro</div>
-    <div class="container">
-      <div class="page-header">
-          <h3>$title</h3>
-      </div>
-      $selection_btn
-      <table id="maintable" class="display custom" cellspacing="0" width="100%">
-        $table
-      </table>
-    </div>
-
-    §js_libs
-    <script>
-        $$(document).ready(function() {
-            $$('#maintable').DataTable({
-                fixedHeader: true,
-                "pageLength": 25,
-                "dom": '<"topcustom"lfr>t<"bottomcustom"ip>'
-            });
-        });
-    </script>
-    $selection_js
+    $$$intro
+    $$$table
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/bootstrap-table@1.14.1/dist/bootstrap-table.min.js"></script>
   </body>
 </html>"""
-t = PreTemplate(PANDAS_TABLE)
-d = {"style_sheets": STYLESHEETS_LOCAL, "js_libs": JS_LIBS_LOCAL}
-PANDAS_TABLE_LOCAL = t.substitute(d)
-d = {"style_sheets": STYLESHEETS_NET, "js_libs": JS_LIBS_NET}
-PANDAS_TABLE_NET = t.substitute(d)
 
-TBL_JAVASCRIPT = '''<script type="text/javascript">
+
+TABLE_SIMPLE = """
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>$$$title</title>
+  <style>
+  body{
+    background-color: #FFFFFF;
+    font-family: freesans, arial, verdana, sans-serif;
+  }
+  th {
+    border-collapse: collapse;
+    border-width: thin;
+    border-style: solid;
+    border-color: black;
+    background-color: #94CAEF;
+    text-align: left;
+    font-weight: bold;
+  }
+  td {
+    border-collapse:collapse;
+    border-width:thin;
+    border-style:solid;
+    border-color:black;
+    padding: 5px;
+  }
+  table {
+    border-collapse:collapse;
+    border-width:thin;
+    border-style:solid;
+    //border-color:black;
+    border: none;
+    background-color: #FFFFFF;
+    text-align: left;
+  }
+</style>
+  </head>
+  <body>
+    $$$intro
+    $$$table
+  </body>
+  </html>"""
+
+
+TBL_JAVASCRIPT = """<script type="text/javascript">
 
 function toggleCpd(cpdIdent)
 {{
@@ -199,7 +173,7 @@ function myShowSelection() {{
   document.location.hash = "#SelectionList";
 }}
 </script>
-'''
+"""
 
 ID_LIST = """<br><b><a name="SelectionList" id="selection_title{ts}">Selection (0):</a></b>
 <form name="id_list{ts}">
@@ -299,7 +273,14 @@ def page(content, title="Results", header=None, summary=None, options=PAGE_OPTIO
         if not isinstance(css, list):
             css = [css]
 
-        css_str = "".join(['  <link rel="stylesheet" type="text/css" href="{}">\n'.format(file_name) for file_name in css])
+        css_str = "".join(
+            [
+                '  <link rel="stylesheet" type="text/css" href="{}">\n'.format(
+                    file_name
+                )
+                for file_name in css
+            ]
+        )
 
     else:
         # minimal inline CSS
@@ -339,7 +320,12 @@ table {
         if type(scripts) != list:
             scripts = [scripts]
 
-        js_str = "".join(['  <script src="{}"></script>\n'.format(file_name) for file_name in scripts])
+        js_str = "".join(
+            [
+                '  <script src="{}"></script>\n'.format(file_name)
+                for file_name in scripts
+            ]
+        )
 
     else:
         js_str = ""
@@ -362,13 +348,10 @@ table {
     else:
         summary_str = ""
 
-
-
     if isinstance(content, list):
         content_str = "".join(content)
     else:
         content_str = content
-
 
     html_page = """<!DOCTYPE html>
 <html>
@@ -385,8 +368,15 @@ table {
 {content_str}
 </body>
 </html>
-""".format(title=title, icon_str=icon_str, css_str=css_str, js_str=js_str,
-           header_str=header_str, summary_str=summary_str, content_str=content_str)
+""".format(
+        title=title,
+        icon_str=icon_str,
+        css_str=css_str,
+        js_str=js_str,
+        header_str=header_str,
+        summary_str=summary_str,
+        content_str=content_str,
+    )
 
     return html_page
 
@@ -411,7 +401,9 @@ def img(src, options=None):
 
         option_str = "".join(option_list)
 
-    stub = ['<img {}src="data:image/png;base64,{}" alt="icon" />'.format(option_str, src)]
+    stub = [
+        '<img {}src="data:image/png;base64,{}" alt="icon" />'.format(option_str, src)
+    ]
 
     return stub
 
