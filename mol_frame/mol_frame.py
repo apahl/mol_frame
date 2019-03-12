@@ -199,17 +199,24 @@ class MolFrame(object):
             formatters (dict or None)
             escape (bool): Default is False.
             index (bool): Whether to display the index or not, default is False.
-            rename_mol_col (bool): Default is True."""
+            rename_mol_col (bool): Default is True.
+            selectable (bool): Default is False."""
         self.find_mol_col()
         formatters = {self.use_col: self.mol_img_tag}
         formatters.update(kwargs.pop("formatters", {}))
         escape = kwargs.pop("escape", False)
         index = kwargs.pop("index", False)
         rename_mol_col = kwargs.pop("rename_mol_col", True)
+        selectable = kwargs.pop("selectable", False)
         columns = list(self.data.columns)
         columns = [columns.pop(columns.index(self.use_col))] + columns
-        self.data = self.data[columns]
-        result = self.data.to_html(formatters=formatters, escape=escape, index=index, **kwargs)
+        tmp = self.data.copy()
+        if selectable:
+            columns = ["$Sel$"] + columns
+            tmp["$Sel$"] = ""
+        tmp = tmp[columns]
+        result = tmp.to_html(formatters=formatters, escape=escape, index=index, **kwargs)
+
         if rename_mol_col:
             result = result.replace(f">{self.use_col}</th>", ">Molecule</th>")
         return result
@@ -222,6 +229,7 @@ class MolFrame(object):
             escape (bool): Default is False.
             index (bool): Whether to display the index or not, default is False.
             rename_mol_col (bool)"""
+        kwargs.pop("selectable", False)
         return HTML(self.to_html(**kwargs))
 
     def show_grid(
@@ -265,20 +273,27 @@ class MolFrame(object):
             format (str): Formatting used for the table. Available options: ``simple``, ``bootstrap``.
             formatters (dict or None)
             escape (bool): Default is False.
-            rename_mol_col (bool): Default is True."""
+            rename_mol_col (bool): Default is True.
+            selectable (bool): Default is False."""
         tbl_format = kwargs.pop("format", "bootstrap").lower()
         intro = kwargs.pop("intro", "")
+        selectable = kwargs.get("selectable", False)
         if "boot" in tbl_format:
             # Bootstrap does not seem to play nicely with the pandas index:
             kwargs["index"] = False
         table = self.to_html(**kwargs)
+        d = {}
         if "boot" in tbl_format:
-            table = table.replace('<table border="1" class="dataframe">', '<table border="1" data-toggle="table">')
-            t = templ.MFTemplate(templ.TABLE_BOOTSTRAP)
+            table = templ.bootstrap_options(table, selectable, id_col=self.id_col)
+            if selectable:
+                t = templ.MFTemplate(templ.TABLE_BOOTSTRAP_SELECT)
+                d["id_col"] = self.id_col + "s"  # Mehrzahl
+            else:
+                t = templ.MFTemplate(templ.TABLE_BOOTSTRAP)
         else:
             print("* simple format used.")
             t = templ.MFTemplate(templ.TABLE_SIMPLE)
-        d = {"title": title, "intro": intro, "table": table}
+        d.update({"title": title, "intro": intro, "table": table})
         page = t.substitute(d)
         templ.write(page, fn)
         if IPYTHON:

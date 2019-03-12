@@ -61,6 +61,52 @@ TABLE_BOOTSTRAP = """
   </body>
 </html>"""
 
+TABLE_BOOTSTRAP_SELECT = """
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.14.1/dist/bootstrap-table.min.css">
+
+    <title>$$$title</title>
+  </head>
+  <body>
+    $$$intro
+    <form name="mf">
+    <button class="btn btn-primary" onclick=mf_get_selection()>Get Selection</button>
+    $$$table
+    <p><br>
+    Selected $$$id_col
+    :<br>
+    <textarea name="mf_selection" rows="10" cols="20"></textarea>
+    </p>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/bootstrap-table@1.14.1/dist/bootstrap-table.min.js"></script>
+    <script>
+    function mf_get_selection() {
+        var $table = $('#table');
+        json = $table.bootstrapTable('getSelections');
+        result = "";
+        for (i = 0; i < json.length; i++) {
+          obj = json[i];
+          id = JSON.stringify(obj["id"]);
+          result = result + id + "\\n";
+          result = result.replace(/\"/g, "");
+        }
+        document.mf.mf_selection.value = result;
+    }
+
+    </script>
+  </body>
+</html>"""
 
 TABLE_SIMPLE = """
 <!doctype html>
@@ -215,6 +261,55 @@ function onSubmit() {{
 </tr>
 </table>
 '''
+
+
+def bootstrap_options(table: str, selectable=False, id_col="Compound_Id") -> str:
+    """Apply some common Bootstrap options to the table.
+
+    Arguments:
+        table: The HTML table as string, the output from a x.to_html() call.
+
+    Returns:
+        The new table string with the options included."""
+
+    replace_list = [
+        '<table border="1" ',
+        'id="table" ',
+        'data-toggle="table" ',
+        'data-show-columns="true" ',
+        'data-search="true" ',
+        'data-sortable="true" ',
+        # 'style="width: 400px; ',
+        'style="width: auto !important" ',
+    ]
+
+    if selectable:
+        replace_list.extend(
+            [
+                'data-click-to-select="true" ',
+                'data-toolbar=".btn-primary" ',
+                'data-id-field="id" ',
+                'data-select-item-name="id" ',
+            ]
+        )
+
+    replace_list.append(">")
+    replace_str = "".join(replace_list)
+    result = table.replace('<table border="1" class="dataframe">', replace_str)
+    if selectable:
+        result = result.replace(
+            "<th>$Sel$</th>", '<xxx data-field="state" data-checkbox="true"></th>'
+        )
+        result = result.replace(
+            f"<th>{id_col}</th>", f'<th data-field="id">{id_col}</th>'
+        )
+    result = result.replace("<th>Molecule", "<xxx>Molecule")
+    # Make sortable:
+    result = result.replace("<th>", '<th data-sortable="true">')
+    result = result.replace("<th ", '<th data-sortable="true" ')
+    # Restore headers disabled for sorting:
+    result = result.replace("<xxx", "<th")
+    return result
 
 
 def tag(name, content, options=None, lf_open=False, lf_close=False):
