@@ -11,32 +11,37 @@ Tools for working with MolFrame dataframes."""
 
 # import pdb
 
-import time
-import pickle  # for b64 encoded mol objects
-import gzip
-import sys
 import base64 as b64
+import gzip
 import os.path as op
+import pickle  # for b64 encoded mol objects
+import sys
 import tempfile
+import time
 from copy import deepcopy
 
-# from collections import Counter
-
-import pandas as pd
 import numpy as np
-
-from rdkit.Chem import AllChem as Chem
-from rdkit import DataStructs
+import pandas as pd
 import rdkit.Chem.Descriptors as Desc
+from rdkit import DataStructs
+from rdkit.Chem import AllChem as Chem
+from rdkit.Chem.MolStandardize.charge import Uncharger
+from rdkit.Chem.MolStandardize.fragment import LargestFragmentChooser
+from rdkit.Chem.MolStandardize.standardize import Standardizer
 
-# from rdkit.Chem import Draw
-
-from mol_frame import nb_tools as nbt, templ
-from mol_frame.viewers import show_grid, write_grid, mol_img_tag
+from mol_frame import nb_tools as nbt
+from mol_frame import templ
+from mol_frame import tools as mft
 from mol_frame.mol_images import b64_mol, check_2d_coords
+from mol_frame.viewers import mol_img_tag, show_grid, write_grid
+
+molvs_s = Standardizer()
+molvs_l = LargestFragmentChooser()
+molvs_u = Uncharger()
+
+
 
 x = b64_mol  # make the linter shut up
-from mol_frame import tools as mft
 
 try:
     from misc_tools import apl_tools
@@ -521,10 +526,11 @@ class MolFrame(object):
             print_log(result.data, "drop cols")
             return result
 
-    def add_mols(self, force=False, remove_src=False):
+    def add_mols(self, force=False, standardize=True, remove_src=False):
         """Adds mol objects to the MolFrame.
         Tries to use the Mol_b64 column. If that is not present, it uses Smiles.
-        Only works when the data object is a Pandas DataFrame."""
+        Only works when the data object is a Pandas DataFrame.
+        Standardizes by default (see standardize_mols())."""
         self.find_mol_col()
         if self.inplace:
             if force or not self.has_mols:
@@ -532,10 +538,11 @@ class MolFrame(object):
                 self.has_mols = True
                 if remove_src:
                     self.data.drop(self.use_col, axis=1, inplace=True)
+                if standardize:
+                    self.standardize_mols()
                 print_log(self.data, "add mols")
         else:
-            result = self.new()
-            result.data = self.data
+            result = self.copy()
             if force or not self.has_mols:
                 result.data[self.mol_col] = result.data[self.use_col].apply(
                     self.mol_method
@@ -543,6 +550,8 @@ class MolFrame(object):
                 result.has_mols = True
                 if remove_src:
                     result.data = result.data.drop(self.use_col, axis=1)
+            if standardize:
+                result = result.standardize_mols()
                 print_log(result.data, "add mols")
             return result
 
@@ -584,6 +593,50 @@ class MolFrame(object):
         else:
             result = self.apply_to_mol(self.smiles_col, _smiles_from_mol)
             print_log(result.data, "add smiles")
+            return result
+
+    def standardize_mols(self):
+        """Standardizes the molecules in the Mol column.
+        Applies MolVS Standardizer, LargestFragment and Uncharger.
+        Requires the MolFrame to have mols (has_mols == True)."""
+        if not self.has_mols:
+            print("* MolFrame does not have mols. Run add_mols() first.")
+            return
+
+        if self.inplace:
+            self.data[self.mol_col] = self.data[self.mol_col].apply(standardize_mol)
+        else:
+            result = self.copy()
+            result.data[self.mol_col] = result.data[self.mol_col].apply(standardize_mol)
+            print_log(result.data, "add smiles")
+            return result
+
+    def add_inchikeys(self):
+        """Adds Inchi Keys."""
+        self.find_mol_col()
+        if len(self.data) > 5000:
+            show_prog = True
+            pb = nbt.Progressbar(end=len(self.data))
+        else:
+            show_prog = False
+
+        def _lambda(x):
+            if show_prog:
+                pb.inc()
+            mol = self.mol_method(x)
+            if not mol:
+                return np.nan
+            return Chem.inchi.MolToInchiKey(mol)
+
+        if self.inplace:
+            self.data["InchiKey"] = self.data[self.use_col].apply(_lambda)
+            if show_prog:
+                pb.done()
+        else:
+            result = self.copy()
+            result.data["InchiKey"] = result.data[self.use_col].apply(_lambda)
+            if show_prog:
+                pb.done()
             return result
 
     def add_fp(self, fp_name="ecfc4"):
@@ -1014,8 +1067,14 @@ def read_csv(fn, sep="\t"):
     return result
 
 
-def read_sdf(fn, gen2d=False):
-    """Create a MolFrame instance from an SD file (can be gzipped (fn ends with ``.gz``))."""
+def read_sdf(fn, store_mol_as="Mol_b64", gen2d=False):
+    """Create a MolFrame instance from an SD file (can be gzipped (fn ends with ``.gz``)).
+
+    Arguments:
+        store_mol_as: "Mol_b64" or "Smiles" """
+    if store_mol_as not in ["Mol_b64", "Smiles"]:
+        print("* Mols are stored as Mol_b64")
+        store_mol_as = "Mol_b64"
     d = {}
     ctr = 0
     first_mol = True
@@ -1040,11 +1099,11 @@ def read_sdf(fn, gen2d=False):
             if first_mol:
                 first_mol = False
                 for prop in mol.GetPropNames():
-                    if prop in ["Mol_b64", "order"]:
+                    if prop in [store_mol_as, "order"]:
                         continue
                     d[prop] = []
                 d_keys = set(d.keys())
-                d["Mol_b64"] = []
+                d[store_mol_as] = []
             mol_props = set()
             for prop in mol.GetPropNames():
                 if prop in d_keys:
@@ -1058,8 +1117,12 @@ def read_sdf(fn, gen2d=False):
                 d[prop].append(np.nan)
             if gen2d:
                 check_2d_coords(mol, force=True)
-            mol_b64 = b64.b64encode(pickle.dumps(mol)).decode()
-            d["Mol_b64"].append(mol_b64)
+            if store_mol_as == "Smiles":
+                smi = Chem.MolToSmiles(mol)
+                d["Smiles"].append(smi)
+            else:
+                mol_b64 = b64.b64encode(pickle.dumps(mol)).decode()
+                d["Mol_b64"].append(mol_b64)
         if do_close:
             file_obj.close()
     for k in d.keys():
@@ -1169,3 +1232,11 @@ def struct_hover(mf, force=False):
         )
     )
     return hover
+
+
+def standardize_mol(mol):
+    if mol is None: return None
+    mol = molvs_s.standardize(mol)
+    mol = molvs_l.choose(mol)
+    mol = molvs_u.uncharge(mol)
+    return mol

@@ -52,6 +52,14 @@ except ImportError:
 from rdkit.Chem import AllChem as Chem
 from rdkit.Chem import Draw
 import rdkit.Chem.Descriptors as Desc
+from rdkit.Chem.MolStandardize.charge import Uncharger
+from rdkit.Chem.MolStandardize.fragment import LargestFragmentChooser
+from rdkit.Chem.MolStandardize.standardize import Standardizer
+
+molvs_s = Standardizer()
+molvs_l = LargestFragmentChooser()
+molvs_u = Uncharger()
+
 
 # imports for similarity search
 from rdkit import DataStructs
@@ -92,6 +100,7 @@ except NameError:
 
 if IPY:
     from IPython.core.display import HTML, display, clear_output
+
 
 
 def get_value(str_val):
@@ -180,6 +189,12 @@ class Summary(OrderedDict):
         else:
             print(self.__str__())
 
+
+def standardize_mol(mol):
+    mol = molvs_s.standardize(mol)
+    mol = molvs_l.choose(mol)
+    mol = molvs_u.uncharge(mol)
+    return mol
 
 
 
@@ -584,7 +599,7 @@ def stop_cache_writer(stream, name, summary=None, comp_id="stop_cache_writer"):
     stop_csv_writer(stream, fn, summary=summary, comp_id=comp_id)
 
 
-def pipe_mol_from_smiles(stream, in_smiles="Smiles", remove=True, summary=None, comp_id="pipe_mol_from_smiles"):
+def pipe_mol_from_smiles(stream, in_smiles="Smiles", standardize=True, remove=True, summary=None, comp_id="pipe_mol_from_smiles"):
     """Generate a molecule on the stream from Smiles."""
     rec_counter = 0
     for rec in stream:
@@ -595,6 +610,8 @@ def pipe_mol_from_smiles(stream, in_smiles="Smiles", remove=True, summary=None, 
 
             if mol:
                 rec_counter += 1
+                if standardize:
+                    mol = standardize_mol(mol)
                 if summary is not None:
                     summary[comp_id] = rec_counter
 
@@ -1157,6 +1174,24 @@ def pipe_join_data_from_file(stream, fn, join_on, behaviour="joined_only", appen
         summary.update()
 
 
+def pipe_standardize_mol(stream, summary=None, comp_id="pipe_standardize_mol"):
+    """Standardizes the molecules in the Mol column.
+        Applies MolVS Standardizer, LargestFragment and Uncharger."""
+    rec_counter = 0
+    for rec in stream:
+        if "mol" not in rec: continue
+        mol = rec["mol"]
+        if not mol: continue
+        mol = standardize_mol(mol)
+        rec["mol"] = mol
+
+        rec_counter += 1
+        if summary is not None:
+            summary[comp_id] = rec_counter
+
+        yield rec
+
+
 def pipe_keep_largest_fragment(stream, summary=None, comp_id="pipe_keep_largest_frag"):
     rec_counter = 0
     frag_counter = 0
@@ -1233,6 +1268,22 @@ def pipe_neutralize_mol(stream, summary=None, comp_id="pipe_neutralize_mol"):
                 summary["{}_neutralized".format(comp_id)] = neutr_counter
 
         rec["mol"] = mol
+
+        yield rec
+
+
+def pipe_add_inchikeys(stream, summary=None, comp_id="pipe_add_inchikeys"):
+    """Standardizes the molecules in the Mol column.
+        Applies MolVS Standardizer, LargestFragment and Uncharger."""
+    rec_counter = 0
+    for rec in stream:
+        if "mol" not in rec: continue
+        mol = rec["mol"]
+        if not mol: continue
+        rec["InchiKey"] = Chem.inchi.MolToInchiKey(mol)
+        rec_counter += 1
+        if summary is not None:
+            summary[comp_id] = rec_counter
 
         yield rec
 
