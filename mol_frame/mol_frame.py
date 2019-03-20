@@ -235,6 +235,7 @@ class MolFrame(object):
             index (bool): Whether to display the index or not, default is False.
             rename_mol_col (bool)"""
         kwargs.pop("selectable", False)
+        kwargs["height"] = 0
         return HTML(self.to_html(**kwargs))
 
     def show_grid(
@@ -250,9 +251,9 @@ class MolFrame(object):
         fp_col=None,
         **kwargs
     ):
-        self.add_mols()
+        tmp = self.add_mols()
         return show_grid(
-            self.data,
+            tmp.data,
             title=title,
             include_smiles=include_smiles,
             drop=drop,
@@ -279,17 +280,19 @@ class MolFrame(object):
             formatters (dict or None)
             escape (bool): Default is False.
             rename_mol_col (bool): Default is True.
-            selectable (bool): Default is False."""
+            selectable (bool): Default is False.
+            height (int): Defines the height of the table and enables a fixed header."""
         tbl_format = kwargs.pop("format", "bootstrap").lower()
         intro = kwargs.pop("intro", "")
         selectable = kwargs.get("selectable", False)
+        height = kwargs.get("height", 0)
         if "boot" in tbl_format:
             # Bootstrap does not seem to play nicely with the pandas index:
             kwargs["index"] = False
         table = self.to_html(**kwargs)
         d = {}
         if "boot" in tbl_format:
-            table = templ.bootstrap_options(table, selectable, id_col=self.id_col)
+            table = templ.bootstrap_options(table, selectable, id_col=self.id_col, height=height)
             if selectable:
                 t = templ.MFTemplate(templ.TABLE_BOOTSTRAP_SELECT)
                 d["id_col"] = self.id_col + "s"  # Mehrzahl
