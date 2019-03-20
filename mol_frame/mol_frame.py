@@ -625,8 +625,12 @@ class MolFrame(object):
                 pb.inc()
             mol = self.mol_method(x)
             if not mol:
-                return np.nan
-            return Chem.inchi.MolToInchiKey(mol)
+                return "NO_MOL."
+            try:
+                ik = Chem.inchi.MolToInchiKey(mol)
+            except ValueError:
+                ik = "FAILED."
+            return ik
 
         if self.inplace:
             self.data["InchiKey"] = self.data[self.use_col].apply(_lambda)

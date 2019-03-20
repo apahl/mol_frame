@@ -1280,7 +1280,10 @@ def pipe_add_inchikeys(stream, summary=None, comp_id="pipe_add_inchikeys"):
         if "mol" not in rec: continue
         mol = rec["mol"]
         if not mol: continue
-        rec["InchiKey"] = Chem.inchi.MolToInchiKey(mol)
+        try:
+            rec["InchiKey"] = Chem.inchi.MolToInchiKey(mol)
+        except ValueError:
+            rec["InchiKey"] = "FAILED."
         rec_counter += 1
         if summary is not None:
             summary[comp_id] = rec_counter
