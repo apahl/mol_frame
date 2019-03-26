@@ -32,7 +32,7 @@ from rdkit.Chem.MolStandardize.standardize import Standardizer
 from mol_frame import nb_tools as nbt
 from mol_frame import templ
 from mol_frame import tools as mft
-from mol_frame.mol_images import b64_mol, check_2d_coords
+from mol_frame.mol_images import b64_mol, check_2d_coords, rescale
 from mol_frame.viewers import mol_img_tag, show_grid, write_grid
 
 molvs_s = Standardizer()
@@ -285,7 +285,7 @@ class MolFrame(object):
         tbl_format = kwargs.pop("format", "bootstrap").lower()
         intro = kwargs.pop("intro", "")
         selectable = kwargs.get("selectable", False)
-        height = kwargs.get("height", 0)
+        height = kwargs.pop("height", 0)
         if "boot" in tbl_format:
             # Bootstrap does not seem to play nicely with the pandas index:
             kwargs["index"] = False
@@ -335,34 +335,12 @@ class MolFrame(object):
             link_col = "Chembl_Id"
             link_templ = "https://www.ebi.ac.uk/chembl/compound/inspect/{}"
             """
-        self.add_mols()
+        tmp = self.add_mols()
         if self.id_col is not None and self.id_col not in self.data.keys():
             self.id_col = None
         return write_grid(
-            self.data,
+            tmp.data,
             title=title,
-            fn=fn,
-            smiles_col=self.smiles_col,
-            mol_col=self.mol_col,
-            id_col=self.id_col,
-            b64_col=self.b64_col,
-            fp_col=self.fp_col,
-            **kwargs
-        )
-
-    def grid(self, title="MolGrid", drop=[], keep=[], fn="molgrid.html", **kwargs):
-        """Known kwargs: interactive (bool)
-                         highlight (dict)
-                         hlsss (colname)
-                         truncate (int)"""
-        self.add_mols()
-        if self.id_col is not None and self.id_col not in self.data.keys():
-            self.id_col = None
-        return show_grid(
-            self.data,
-            title=title,
-            drop=drop,
-            keep=keep,
             fn=fn,
             smiles_col=self.smiles_col,
             mol_col=self.mol_col,
@@ -555,7 +533,7 @@ class MolFrame(object):
                     result.data = result.data.drop(self.use_col, axis=1)
             if standardize:
                 result = result.standardize_mols()
-                print_log(result.data, "add mols")
+            print_log(result.data, "add mols")
             return result
 
     def add_images(self, force=False):
@@ -794,15 +772,11 @@ class MolFrame(object):
                 pb.done()
             return result
 
-    def rescale(self, f=1.5):
+    def rescale(self, f=1.4):
         def _transform(m):
             if show_prog:
                 pb.inc()
-            tm = np.zeros((4, 4), np.double)
-            for i in range(3):
-                tm[i, i] = f
-            tm[3, 3] = 1.0
-            Chem.TransformMol(m, tm)
+            rescale(m, f)
 
         self.find_mol_col()
         if len(self.data) > 1000:

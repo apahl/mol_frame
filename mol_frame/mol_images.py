@@ -2,10 +2,15 @@ import base64
 from itertools import chain
 from io import BytesIO as IO
 
+import numpy as np
+
 from PIL import Image, ImageChops
 
 from rdkit.Chem import AllChem as Chem
+from rdkit.Chem.rdCoordGen import AddCoords  # New coord. generation
 from rdkit.Chem import Draw
+
+from mol_frame import tools as mft
 
 try:
     Draw.DrawingOptions.atomLabelFontFace = "DejaVu Sans"
@@ -13,13 +18,26 @@ try:
 except KeyError:  # Font "DejaVu Sans" is not available
     pass
 
-try:
-    # Try to import Avalon so it can be used for generation of 2d coordinates.
-    from rdkit.Avalon import pyAvalonTools as pyAv
-    USE_AVALON_2D = True
-except ImportError:
-    print("* Avalon not available. Using RDKit for 2d coordinate generation.")
-    USE_AVALON_2D = False
+
+config = mft.load_config()
+
+USE_RDKIT_NEW_COORD = config["Options"].get("UseNewRdkitCoord", True)
+
+# try:
+#     # Try to import Avalon so it can be used for generation of 2d coordinates.
+#     from rdkit.Avalon import pyAvalonTools as pyAv
+#     USE_AVALON_2D = True
+# except ImportError:
+#     print("* Avalon not available. Using RDKit for 2d coordinate generation.")
+#     USE_AVALON_2D = False
+
+
+def rescale(mol, f=1.4):
+    tm = np.zeros((4, 4), np.double)
+    for i in range(3):
+        tm[i, i] = f
+    tm[3, 3] = 1.0
+    Chem.TransformMol(mol, tm)
 
 
 def check_2d_coords(mol, force=False):
@@ -31,8 +49,9 @@ def check_2d_coords(mol, force=False):
             force = True  # no 2D coords... calculate them
 
     if force:
-        if USE_AVALON_2D:
-            pyAv.Generate2DCoords(mol)
+        if USE_RDKIT_NEW_COORD:
+            AddCoords(mol)
+            rescale(mol, f=1.4)
         else:
             mol.Compute2DCoords()
 
@@ -80,13 +99,15 @@ def b64_mol(mol, size=300, hlsss=None):
         else:
             atoms = []
         try:
-            img = autocrop(Draw.MolToImage(mol, size=(size, size), highlightAtoms=atoms))
+            img = autocrop(
+                Draw.MolToImage(mol, size=(size, size), highlightAtoms=atoms)
+            )
         except UnicodeEncodeError:
             print(Chem.MolToSmiles(mol))
             mol = Chem.MolFromSmiles("*")
             img = autocrop(Draw.MolToImage(mol, size=(size, size)))
     img = make_transparent(img)
-    img.save(img_file, format='PNG')
+    img.save(img_file, format="PNG")
     b64 = base64.b64encode(img_file.getvalue())
     b64 = b64.decode()
     img_file.close()

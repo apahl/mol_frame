@@ -38,6 +38,7 @@ import gzip
 import pickle
 import base64 as b64
 import tempfile
+from glob import glob
 
 import numpy as np
 try:
@@ -244,17 +245,16 @@ def start_csv_reader(fn, max_records=0, tag=True, sep="\t",
         An iterator with the fields as dict
 
     Parameters:
-        fn (str, list<str>): filename or list of filenames.
+        fn (str): filename, may contain wildcards.
         tag (bool): add the filename as a record when reading from more than one file.
         max_records (int): maximum number of records to read, 0 means all.
         summary (Summary): a Counter class to collect runtime statistics.
         comp_id: (str): the component Id to use for the summary."""
 
-    if not isinstance(fn, list):
-        fn = [fn]
 
+    fn_list = glob(fn)
     rec_counter = 0
-    for filen in fn:
+    for filen in fn_list:
         if ".gz" in filen:
             f = gzip.open(filen, mode="rt")
         else:
@@ -304,7 +304,7 @@ def start_sdf_reader(fn, max_records=0, tag=True, summary=None, comp_id="start_s
         An iterator with the fields as dict, including the molecule in the "mol" key
 
     Parameters:
-        fn (str, list): filename or list of filenames.
+        fn (str): filename, may contain wildcards.
         max_records (int): maximum number of records to read, 0 means all.
         tag (bool): add the filename as a record when reading from more than one file.
         summary (Summary): a Counter class to collect runtime statistics.
@@ -313,10 +313,9 @@ def start_sdf_reader(fn, max_records=0, tag=True, summary=None, comp_id="start_s
     rec_counter = 0
     no_mol_counter = 0
     # also open lists of files
-    if not isinstance(fn, list):
-        fn = [fn]
+    fn_list = glob(fn)
 
-    for filen in fn:
+    for filen in fn_list:
         if ".gz" in filen:
             f = gzip.open(filen, mode="rb")
         else:
@@ -736,7 +735,7 @@ def pipe_calc_ic50(stream, prop_pic50, prop_ic50=None, unit="uM", digits=3,
         digits (int): number of decimal digits to use."""
 
     rec_counter = 0
-    if prop_ic50 is None:
+    if prop_ic50 is None or len(prop_ic50) == 0:
         pos = prop_pic50.rfind("_")
         if pos > 0:
             bn = prop_pic50[:pos]
@@ -761,7 +760,7 @@ def pipe_calc_props(stream, props, force2d=False, summary=None, comp_id="pipe_ca
     """Calculate properties from the Mol_List.
     props can be a single property or a list of properties.
 
-    Calculable properties:
+    Calculable properties (as comma-separated list):
         2d, date, formula, hba, hbd, logp, molid, mw, smiles, rotb, sa (synthetic accessibility), tpsa
 
     Synthetic Accessibility (normalized):
@@ -774,8 +773,7 @@ def pipe_calc_props(stream, props, force2d=False, summary=None, comp_id="pipe_ca
     """
 
     rec_counter = 0
-    if not isinstance(props, list):
-        props = [props]
+    props = props.split(",")
 
     # make all props lower-case:
     props = list(map(lambda x: x.lower(), props))
@@ -882,10 +880,9 @@ def pipe_has_prop_filter(stream, prop, invert=False, summary=None, comp_id="pipe
 
 def pipe_id_filter(stream, cpd_ids, id_prop="Compound_Id", summary=None, comp_id="pipe_id_filter"):
     rec_counter = 0
-    if not isinstance(cpd_ids, list):
-        cpd_ids = [cpd_ids]
+    cpd_ids = cpd_ids.split(",")
 
-    cpd_ids = {c_id: 0 for c_id in cpd_ids}
+    cpd_ids = {get_value(c_id) for c_id in cpd_ids}  # set comprehension
 
     for rec in stream:
         if id_prop not in rec: continue
@@ -941,7 +938,7 @@ def pipe_mol_filter(stream, query, smarts=False, invert=False, add_h=False, summ
 
 
 def pipe_calc_fp_b64(stream, summary=None, comp_id="pipe_calc_fp"):
-    """Calculate the Fingerprint. This is usefule to do in a separate pipeline
+    """Calculate the Fingerprint. This is useful to do in a separate pipeline
     before performing a similarity search, where this FP is used.
     The FP is calculated from the Murcko scaffold of the mol."""
     rec_counter = 0
@@ -1009,8 +1006,7 @@ def pipe_remove_props(stream, props, summary=None, comp_id="pipe_remove_props"):
     """Remove properties from the stream.
     props can be a single property name or a list of property names."""
 
-    if not isinstance(props, list):
-        props = [props]
+    props = props.split(",")
 
     rec_counter = 0
     for rec_counter, rec in enumerate(stream, 1):
@@ -1029,8 +1025,7 @@ def pipe_keep_props(stream, props, summary=None, comp_id="pipe_keep_props", show
     props can be a single property name or a list of property names.
     show_first prints the first records for debugging purposes."""
 
-    if not isinstance(props, list):
-        props = [props]
+    props = props.split(",")
 
     if "mol" not in props:
         props.append("mol")

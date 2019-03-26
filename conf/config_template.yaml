@@ -21,3 +21,6 @@ Paths:
     # tab-delim.
     ContainerDataPath: xxx_container_data.tsv
     ContainerDataCols: []
+
+Options:
+    UseNewRdkitCoord: True
