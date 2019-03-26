@@ -32,8 +32,8 @@ from rdkit.Chem.MolStandardize.standardize import Standardizer
 from mol_frame import nb_tools as nbt
 from mol_frame import templ
 from mol_frame import tools as mft
-from mol_frame.mol_images import b64_mol, check_2d_coords, rescale
-from mol_frame.viewers import mol_img_tag, show_grid, write_grid
+from mol_frame.mol_images import mol_img_tag, b64_mol, check_2d_coords, rescale
+from mol_frame.viewers import show_grid, write_grid
 
 molvs_s = Standardizer()
 molvs_l = LargestFragmentChooser()
