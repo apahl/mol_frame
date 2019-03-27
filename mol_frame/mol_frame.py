@@ -32,7 +32,7 @@ from rdkit.Chem.MolStandardize.standardize import Standardizer
 from mol_frame import nb_tools as nbt
 from mol_frame import templ
 from mol_frame import tools as mft
-from mol_frame.mol_images import mol_img_tag, b64_mol, check_2d_coords, rescale
+from mol_frame.mol_images import mol_img_tag, b64_mol, add_coords, rescale
 from mol_frame.viewers import show_grid, write_grid
 
 molvs_s = Standardizer()
@@ -742,7 +742,7 @@ class MolFrame(object):
             result.data = self.data.apply(pd.to_numeric, errors="ignore", axis=1)
             return result
 
-    def check_2d_coords(self, force=False):
+    def add_coords(self, force=False):
         """Generates 2D coordinates if necessary.
         Requires the Mol object to be present (use add_mols() )."""
         self.find_mol_col()
@@ -757,7 +757,7 @@ class MolFrame(object):
                 pb.inc()
             mol = self.mol_method(x)
             if mol:
-                check_2d_coords(mol, force=force)
+                add_coords(mol, force=force)
 
         if self.inplace:
             self.data[self.use_col].apply(_apply)
@@ -1097,7 +1097,7 @@ def read_sdf(fn, store_mol_as="Mol_b64", gen2d=False):
             for prop in missing_props:
                 d[prop].append(np.nan)
             if gen2d:
-                check_2d_coords(mol, force=True)
+                add_coords(mol, force=True)
             if store_mol_as == "Smiles":
                 smi = Chem.MolToSmiles(mol)
                 d["Smiles"].append(smi)
@@ -1130,7 +1130,7 @@ def read_pkl(fn):
     return result
 
 
-def mol_from_smiles(smi, calc_2d=True):
+def mol_from_smiles(smi):
     """Generate a mol from Smiles.
     For invalid Smiles it generates a No-structure."""
     if smi == "foo":  # dask artifact
@@ -1138,9 +1138,6 @@ def mol_from_smiles(smi, calc_2d=True):
     mol = Chem.MolFromSmiles(smi)
     if not mol:
         mol = Chem.MolFromSmiles("*")
-    else:
-        if calc_2d:
-            check_2d_coords(mol)
     return mol
 
 

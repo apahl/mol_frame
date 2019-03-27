@@ -40,7 +40,7 @@ def rescale(mol, f=1.4):
     Chem.TransformMol(mol, tm)
 
 
-def check_2d_coords(mol, force=False):
+def add_coords(mol, force=False):
     """Check if a mol has 2D coordinates and if not, calculate them."""
     if not force:
         try:
@@ -81,6 +81,7 @@ def autocrop(im, bgcolor="white"):
 def b64_mol(mol, size=300, hlsss=None):
     img_file = IO()
     if isinstance(mol, list):
+        [add_coords(x) for x in mol]
         img = autocrop(Draw.MolsToGridImage(mol, size=(size, size)))
     else:
         if hlsss is not None:
@@ -99,6 +100,7 @@ def b64_mol(mol, size=300, hlsss=None):
         else:
             atoms = []
         try:
+            add_coords(mol)
             img = autocrop(
                 Draw.MolToImage(mol, size=(size, size), highlightAtoms=atoms)
             )
@@ -117,7 +119,6 @@ def b64_mol(mol, size=300, hlsss=None):
 def mol_img_tag(mol, size=300, options=None):
     if isinstance(mol, str):  # convert from Smiles on-the-fly, when necessary
         mol = Chem.MolFromSmiles(mol)
-        check_2d_coords(mol)
     tag = """<img {} src="data:image/png;base64,{}" alt="Mol"/>"""
     if options is None:
         options = ""
