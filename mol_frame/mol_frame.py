@@ -22,6 +22,7 @@ from copy import deepcopy
 
 import numpy as np
 import pandas as pd
+import rdkit
 import rdkit.Chem.Descriptors as Desc
 from rdkit import DataStructs
 from rdkit.Chem import AllChem as Chem
@@ -1218,3 +1219,23 @@ def standardize_mol(mol):
     mol = molvs_l.choose(mol)
     mol = molvs_u.uncharge(mol)
     return mol
+
+
+def chem_sim(mol_smi_or_fp, query_smi_or_fp):
+    if mol_smi_or_fp is None or query_smi_or_fp is None:
+        return np.nan
+    if isinstance(mol_smi_or_fp, str):
+        mol_smi_or_fp = mol_from_smiles(mol_smi_or_fp)
+        if mol_smi_or_fp is None:
+            return np.nan
+    if isinstance(mol_smi_or_fp, rdkit.Chem.rdchem.Mol):
+        mol_smi_or_fp = Chem.GetMorganFingerprint(mol_smi_or_fp, 2)
+    if not isinstance(mol_smi_or_fp, rdkit.DataStructs.cDataStructs.UIntSparseIntVect):
+        raise ValueError("Invalid fingerprint format.")
+    if isinstance(query_smi_or_fp, str):
+        query_smi_or_fp = mol_from_smiles(query_smi_or_fp)
+        if len(query_smi_or_fp.GetAtoms()) == 0:
+            return np.nan
+    if isinstance(query_smi_or_fp, rdkit.Chem.rdchem.Mol):
+        query_smi_or_fp = Chem.GetMorganFingerprint(query_smi_or_fp, 2)
+    return round(DataStructs.TanimotoSimilarity(mol_smi_or_fp, query_smi_or_fp), 3)

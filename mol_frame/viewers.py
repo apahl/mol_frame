@@ -121,7 +121,7 @@ def html_grid(
     """Creates a HTML grid out of the MolFrame.data input.
 
     Parameters:
-        sdf_list (Mol_List): list of RDKit molecules
+        df (MolFrame): list of RDKit molecules
         highlight (dict): dict of properties (a.t.m only one) and values to highlight cells,
             e.g. {"activity": "< 50"}
         order (list): a list of substrings to match with the field names for ordering in the table header
@@ -329,7 +329,7 @@ def show_grid(
     fp_col=None,
     **kwargs,
 ):
-    """Show the html_grid to file and return the link."""
+    """Show the html_grid in the Notebook."""
     html = html_grid(
         df,
         title=title,

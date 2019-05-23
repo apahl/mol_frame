@@ -26,13 +26,13 @@ def load_config(conf="config"):
     assert conf in ["config", "plates"]
 
     if "HOME" in os.environ:
-        conf_fn = op.join(os.environ["HOME"], ".config",
-                          "mol_frame", "{}.yaml".format(conf))
+        conf_fn = op.join(
+            os.environ["HOME"], ".config", "mol_frame", "{}.yaml".format(conf)
+        )
     elif "HOMEPATH" in os.environ:  # Windows
-        conf_fn = op.join(os.environ["HOMEPATH"],
-                          "mol_frame", "{}.yaml".format(conf))
+        conf_fn = op.join(os.environ["HOMEPATH"], "mol_frame", "{}.yaml".format(conf))
     try:
-        with open(conf_fn, 'r') as ymlfile:
+        with open(conf_fn, "r") as ymlfile:
             config = yaml.load(ymlfile)
     except FileNotFoundError:
         print("Configuration file {}.yaml not found.".format(conf))
