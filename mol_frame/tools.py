@@ -67,3 +67,13 @@ def ic50(pic50, unit=None, digits=3):
     if unit is not None:
         ic50 /= unit_factor(unit)
     return np.round(ic50, digits)
+
+
+def erg_sim(fp1, fp2):
+    """Taken from iwatobipen's excellent blog:
+    https://iwatobipen.wordpress.com/2016/01/16/ergfingerprint-in-rdkit/"""
+    denominator = (
+        np.sum(np.dot(fp1, fp1)) + np.sum(np.dot(fp2, fp2)) - np.sum(np.dot(fp1, fp2))
+    )
+    numerator = np.sum(np.dot(fp1, fp2))
+    return numerator / denominator

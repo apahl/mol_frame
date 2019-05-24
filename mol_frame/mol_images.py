@@ -119,6 +119,8 @@ def b64_mol(mol, size=300, hlsss=None):
 def mol_img_tag(mol, size=300, options=None):
     if isinstance(mol, str):  # convert from Smiles on-the-fly, when necessary
         mol = Chem.MolFromSmiles(mol)
+    if mol is None:
+        mol = Chem.MolFromSmiles("*")
     tag = """<img {} src="data:image/png;base64,{}" alt="Mol"/>"""
     if options is None:
         options = ""

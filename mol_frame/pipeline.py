@@ -27,9 +27,6 @@ res = p.pipe(rd,
 The progress of the pipeline is displayed in the notebook.
 """
 
-
-# import sys
-# import os.path as op
 from copy import deepcopy
 import time
 from collections import OrderedDict, defaultdict
@@ -50,7 +47,7 @@ except ImportError:
     # so that users that do not use that component and do not have pandas installed
     # do not get an import error
 
-from rdkit.Chem import AllChem as Chem
+from rdkit.Chem import AllChem as Chem, rdReducedGraphs as ERG
 from rdkit.Chem import Draw
 import rdkit.Chem.Descriptors as Desc
 from rdkit.Chem.MolStandardize.charge import Uncharger
@@ -934,6 +931,34 @@ def pipe_mol_filter(stream, query, smarts=False, invert=False, add_h=False, summ
             if summary is not None:
                 summary[comp_id] = rec_counter
 
+            yield rec
+
+
+def pipe_erg_filter(stream, query, cutoff=0.7, summary=None, comp_id="pipe_erg_filter"):
+    """Find compounds with similar Extended Reduced Graphs (ERG)."""
+    if cutoff > 1:
+        raise ValueError("cutoff has to be between 0 .. 1")
+    rec_counter = 0
+
+    if isinstance(query, str):
+        # query is Smiles
+        query_mol = Chem.MolFromSmiles(query)
+    else:
+        query_mol = query
+    if query_mol is None:
+        raise ValueError("Could not generate molecule for query.")
+    query_fp = ERG.GetErGFingerprint(query_mol)
+
+    for rec in stream:
+        if "mol" not in rec: continue
+        mol = rec["mol"]
+        if mol is None: continue
+        mol_fp = ERG.GetErGFingerprint(mol)
+        sim = tools.erg_sim(mol_fp, query_fp)
+        if sim >= cutoff:
+            rec_counter += 1
+            if summary is not None:
+                summary[comp_id] = rec_counter
             yield rec
 
 
