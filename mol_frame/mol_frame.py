@@ -1189,26 +1189,35 @@ def load_resources():
     BATCH = mf_config["Paths"]["BatchPath"]
 
 
-def struct_hover(mf, force=False):
+def struct_hover(mf, force=False, cols=[]):
     """Create a structure tooltip that can be used in Holoviews.
     Takes a MolFrame instance as parameter."""
     if not HOLOVIEWS:
         print("* HoloViews not available.")
         return None
     mf.add_images(force=force)
+    if isinstance(cols, str):
+        cols = [cols]
+    add_cols = []
+    for col in cols:
+        add_cols.append(
+            f"""<div>
+                    <span style="font-size: 12px;">{col}: @{col}</span>
+                </div>"""
+        )
+    add_cols_txt = "\n".join(add_cols)
     hover = HoverTool(
-        tooltips="""
+        tooltips=f"""
             <div>
                 <div>
                     <img src="@Image" alt="Mol" width="70%"><br>
                 <div>
                 <div>
-                    <span style="font-size: 12px; font-weight: bold;">@{}</span>
+                    <span style="font-size: 12px; font-weight: bold;">@{mf.id_col}</span>
                 </div>
+                {add_cols_txt}
             </div>
-        """.format(
-            mf.id_col
-        )
+        """
     )
     return hover
 
