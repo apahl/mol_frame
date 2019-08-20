@@ -86,6 +86,13 @@ if IPYTHON:
 DEBUG = False
 nbits = 1024
 FPDICT = {}
+
+try:
+    import rdkit.Avalon.pyAvalonTools as pyAv
+    FPDICT["avalon"] = lambda m: pyAv.GetAvalonFP(m)
+except ImportError:
+    pass
+
 FPDICT["ecfp0"] = lambda m: Chem.GetMorganFingerprintAsBitVect(m, 0, nBits=nbits)
 FPDICT["ecfp2"] = lambda m: Chem.GetMorganFingerprintAsBitVect(m, 1, nBits=nbits)
 FPDICT["ecfp4"] = lambda m: Chem.GetMorganFingerprintAsBitVect(m, 2, nBits=nbits)
@@ -800,6 +807,20 @@ class MolFrame(object):
             if show_prog:
                 pb.done()
             return result
+
+    def align(self, smiles):
+        if isinstance(smiles, str):
+            amol = Chem.MolFromSmiles(smiles)
+            add_coords(amol)
+
+        if self.inplace:
+            self.add_mols()
+            self.data["Mol"].apply(lambda x: Chem.GenerateDepictionMatching2DStructure(x, amol))
+        else:
+            result = self.add_mols()
+            result.data["Mol"].apply(lambda x: Chem.GenerateDepictionMatching2DStructure(x, amol))
+            return result
+
 
     def keep_largest_fragment(self):
         """Removes salts, etc.

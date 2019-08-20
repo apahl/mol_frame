@@ -78,12 +78,16 @@ def autocrop(im, bgcolor="white"):
     return None  # no contents
 
 
-def b64_mol(mol, size=300, hlsss=None):
+def mol_img_file(mol, size=300, hlsss=None):
     img_file = IO()
     if isinstance(mol, list):
         [add_coords(x) for x in mol]
         img = autocrop(Draw.MolsToGridImage(mol, size=(size, size)))
     else:
+        if isinstance(mol, str):  # convert from Smiles on-the-fly, when necessary
+            mol = Chem.MolFromSmiles(mol)
+        if mol is None:
+            mol = Chem.MolFromSmiles("*")
         if hlsss is not None:
             if isinstance(hlsss, str):
                 hlsss = hlsss.split(",")
@@ -110,17 +114,19 @@ def b64_mol(mol, size=300, hlsss=None):
             img = autocrop(Draw.MolToImage(mol, size=(size, size)))
     img = make_transparent(img)
     img.save(img_file, format="PNG")
-    b64 = base64.b64encode(img_file.getvalue())
-    b64 = b64.decode()
+    val = img_file.getvalue()
     img_file.close()
+    return val
+
+
+def b64_mol(mol, size=300, hlsss=None):
+    img_file = mol_img_file(mol, size=size, hlsss=hlsss)
+    b64 = base64.b64encode(img_file)
+    b64 = b64.decode()
     return b64
 
 
 def mol_img_tag(mol, size=300, options=None):
-    if isinstance(mol, str):  # convert from Smiles on-the-fly, when necessary
-        mol = Chem.MolFromSmiles(mol)
-    if mol is None:
-        mol = Chem.MolFromSmiles("*")
     tag = """<img {} src="data:image/png;base64,{}" alt="Mol"/>"""
     if options is None:
         options = ""
