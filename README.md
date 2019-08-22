@@ -97,16 +97,11 @@ Limitation: unlike in other pipelining tools, because of the nature of Python ge
 
 ## Module SAR
 
-<<<<<<< HEAD
 Currently implements a RandomForestClassifier and offers SimilarityMap visualization as shown in the RDKit [Cookbook](http://www.rdkit.org/docs/Cookbook.html#using-scikit-learn-with-rdkit):
 
 ![Similarity Map](tutorials/sim_map.png "Similarity Map")
 
 Please also have a look at the `sar_example` notebook in the [tutorials](./tutorials) folder.
-=======
-Currently implements a RandomForestClassifier and offers SimilarityMap visualization as shown in the RDKit [Cookbook](http://www.rdkit.org/docs/Cookbook.html#using-scikit-learn-with-rdkit).  
-Pleas have a look at the `sar_example` notebook in the [tutorials](./tutorials) folder.
->>>>>>> 77c88be0e7bfccac321ccbaa45a1e817fd57328a
 
 ## Requirements
 The recommended way to install the dependencies is via [conda](https://www.anaconda.com/download/).
