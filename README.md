@@ -95,6 +95,11 @@ The progress of the pipeline is displayed as a HTML table in the Notebook and ca
 Limitation: unlike in other pipelining tools, because of the nature of Python generators, the pipeline can not be branched. You can use the `stop_cache_writer` to use results in multiple pipelines.
 
 
+## Module SAR
+
+Currently implements a RandomForestClassifier and offers SimilarityMap visualization as shown in the RDKit [Cookbook](http://www.rdkit.org/docs/Cookbook.html#using-scikit-learn-with-rdkit).  
+Pleas have a look at the `sar_example` notebook in the [tutorials](./tutorials) folder.
+
 ## Requirements
 The recommended way to install the dependencies is via [conda](https://www.anaconda.com/download/).
 * Python 3 (come on, you can do the switch to 3!)
@@ -118,4 +123,4 @@ Put a file with the extension `.pth`, e.g. `my_packages.pth`, into one of the `s
 (I have the path to a dedicated folder on my machine included in such a .pth file and link all my development projects to that folder. This way, I need to create / modify the .pth file only once.)
 
 ## Disclaimer
-This is work in progress, compatibility-breaking changes will happen.
+This is work in progress and currently mainly used by one person, compatibility-breaking changes will happen.
