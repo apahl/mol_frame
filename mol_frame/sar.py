@@ -261,8 +261,10 @@ def read_sdf(fn, model_name=None):
 
 def b64_fig(fig, dpi=72):
     img_file = IO()
-    # fig = mi.autocrop(fig)
     # print(fig.savefig.__doc__)
+    # print([x for x in dir(fig) if x.startswith("set_")])
+    # print(sorted(dir(fig)))
+    # print(fig.get_edgecolor(), fig.get_facecolor())
     fig.savefig(img_file, dpi=dpi, format="PNG", bbox_inches="tight")
     img = mi.Image.open(img_file)
     img = mi.autocrop(img)
@@ -276,7 +278,8 @@ def b64_fig(fig, dpi=72):
 
 
 def _get_proba(fp, predictionFunction):
-    return predictionFunction([fp])[0][1]
+    result = predictionFunction([fp])
+    return result[0][1]
 
 
 def add_sim_maps(molf: mf.MolFrame, model):
@@ -289,6 +292,7 @@ def add_sim_maps(molf: mf.MolFrame, model):
             mol,
             SimilarityMaps.GetMorganFingerprint,
             lambda y: _get_proba(y, model.predict_proba),
+            linewidths=0,
         )
         b64 = b64_fig(fig, dpi=72)
         img_src = '<img src="data:image/png;base64,{}" alt="Map" />'.format(b64)
