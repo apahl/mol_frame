@@ -12,7 +12,7 @@ Tools for SAR analysis."""
 import base64, pickle, time
 from io import BytesIO as IO
 import os.path as op
-from collections import Counter
+from collections import Counter, namedtuple
 from copy import deepcopy
 
 # import pandas as pd
@@ -33,6 +33,9 @@ except KeyError:  # Font "DejaVu Sans" is not available
 from mol_frame import mol_frame as mf, mol_images as mi
 
 # from typing import List,
+
+
+Accuracy = namedtuple("Accuracy", "num, overall, active, inactive, kappa")
 
 
 class SAR:
@@ -151,16 +154,28 @@ class SAR:
             )
         )
 
-    def train(self, act_class="AC_Real", n_est=500, show_progress=True):
+    def train(
+        self,
+        act_class="AC_Real",
+        n_est=500,
+        rnd_state=1123,
+        show_progress=True,
+        **kwargs,
+    ):
         self.model = train(
-            self.molf, act_class=act_class, n_est=n_est, show_progress=show_progress
+            self.molf,
+            act_class=act_class,
+            n_est=n_est,
+            rnd_state=rnd_state,
+            show_progress=show_progress,
+            **kwargs,
         )
 
-    def predict(self):
+    def predict(self, threshold=0.5):
         if self.model is None:
             raise LookupError("No suitable model found. Please run `train` first.")
         result = self.copy()
-        result.molf = predict(self.molf, self.model)
+        result.molf = predict(self.molf, self.model, threshold=threshold)
         return result
 
     def add_sim_maps(self):
@@ -171,6 +186,41 @@ class SAR:
         result.molf = add_sim_maps(self.molf, self.model)
         return result
 
+    def accuracy(self):
+        """Returns a namedtuple Accuracy(num, overall, active, inactive, kappa).
+        kappa calculation from P. Czodrowski (https://link.springer.com/article/10.1007/s10822-014-9759-6)"""
+        pred = self.molf.data[
+            (self.molf.data["AC_Real"].notna()) & (self.molf.data["AC_Pred"].notna())
+        ].copy()
+        ctr_num_pred = len(pred)
+        ctr_real_act = len(pred[pred["AC_Real"] == 1])
+        ctr_real_inact = len(pred[pred["AC_Real"] == 0])
+        # print(ctr_real_act, ctr_real_inact)
+        true_pos = len(pred[(pred["AC_Real"] == 1) & (pred["AC_Pred"] == 1)])
+        true_neg = len(pred[(pred["AC_Real"] == 0) & (pred["AC_Pred"] == 0)])
+        false_pos = len(pred[(pred["AC_Real"] == 0) & (pred["AC_Pred"] == 1)])
+        false_neg = len(pred[(pred["AC_Real"] == 1) & (pred["AC_Pred"] == 0)])
+        print(true_pos, true_neg, false_pos, false_neg)
+        acc = (true_pos + true_neg) / ctr_num_pred
+        baseline = (
+            (true_neg + false_pos)
+            * (true_neg + false_neg)
+            / (ctr_num_pred * ctr_num_pred)
+        ) + (
+            (false_neg + true_pos)
+            * (false_pos + true_pos)
+            / (ctr_num_pred * ctr_num_pred)
+        )
+        kappa = (acc - baseline) / baseline
+        result = Accuracy(
+            num=ctr_num_pred,
+            overall=acc,
+            active=true_pos / ctr_real_act,
+            inactive=true_neg / ctr_real_inact,
+            kappa=kappa,
+        )
+        return result
+
 
 def read_csv(name: str) -> SAR:
     bn = name
@@ -179,8 +229,16 @@ def read_csv(name: str) -> SAR:
     return result
 
 
-def train(molf: mf.MolFrame, act_class="AC_Real", n_est=500, show_progress=True):
-    """Returns the trained model."""
+def train(
+    molf: mf.MolFrame,
+    act_class="AC_Real",
+    n_est=500,
+    rnd_state=1123,
+    show_progress=True,
+    **kwargs,
+):
+    """Returns the trained model.
+    The kwargs are passed to sklearn' s RandomForestClassifier constructor."""
     fps = []
     act_classes = []
     molf.find_mol_col()
@@ -202,14 +260,14 @@ def train(molf: mf.MolFrame, act_class="AC_Real", n_est=500, show_progress=True)
     # get a random forest classifiert with 100 trees
     if show_progress:
         print("  [TRAIN] training RandomForestClassifier")
-    rf = RandomForestClassifier(n_estimators=n_est, random_state=1123)
+    rf = RandomForestClassifier(n_estimators=n_est, random_state=rnd_state, **kwargs)
     rf.fit(np_fps, act_classes)
     if show_progress:
         print("  [TRAIN] done.")
     return rf
 
 
-def predict(molf: mf.MolFrame, model):
+def predict(molf: mf.MolFrame, model, threshold=0.5):
     def _predict_mol(mol):
         """Returns the predicted class and the probabilities for a molecule.
 
@@ -218,9 +276,14 @@ def predict(molf: mf.MolFrame, model):
         fp = np.zeros((1,))
         DataStructs.ConvertToNumpyArray(Chem.GetMorganFingerprintAsBitVect(mol, 2), fp)
         fp = fp.reshape(1, -1)  # this removes the deprecation warning
-        predict_class = model.predict(fp)
+        # predict_class = model.predict(fp)
         predict_prob = model.predict_proba(fp)
-        return predict_class[0], max(predict_prob[0])
+        # return predict_class[0], predict_prob[0][1])
+        proba = predict_prob[0][1]
+        if proba > threshold:
+            return 1, proba
+        else:
+            return 0, proba
 
     def _predict(s):
         mol = molf.mol_method(s[molf.use_col])
