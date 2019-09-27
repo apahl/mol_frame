@@ -15,7 +15,7 @@ import os.path as op
 from collections import Counter, namedtuple
 from copy import deepcopy
 
-# import pandas as pd
+import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 
@@ -36,6 +36,11 @@ from mol_frame import mol_frame as mf, mol_images as mi
 
 
 Accuracy = namedtuple("Accuracy", "num, overall, active, inactive, kappa")
+
+COL_WHITE = "#ffffff"
+COL_GREEN = "#ccffcc"
+COL_YELLOW = "#ffffcc"
+COL_RED = "#ffcccc"
 
 
 class SAR:
@@ -221,6 +226,51 @@ class SAR:
         )
         return result
 
+    def write_grid(self, **kwargs):
+        highlight = kwargs.pop("highlight", False)
+        if not highlight:
+            return self.molf.write_grid(**kwargs)
+        rec_list = []
+        for _, rec in self.molf.data.iterrows():
+            if rec["Prob"] < 0.2 or rec["Prob"] > 0.8:
+                rec[
+                    "Prob"
+                ] = f'<div style="background-color: {COL_GREEN};">{rec["Prob"]}</div>'
+                rec[
+                    "Confidence"
+                ] = f'<div style="background-color: {COL_GREEN};">{rec["Confidence"]}</div>'
+            elif rec["Prob"] < 0.4 or rec["Prob"] > 0.6:
+                rec[
+                    "Prob"
+                ] = f'<div style="background-color: {COL_YELLOW};">{rec["Prob"]}</div>'
+                rec[
+                    "Confidence"
+                ] = f'<div style="background-color: {COL_YELLOW};">{rec["Confidence"]}</div>'
+            else:
+                rec[
+                    "Prob"
+                ] = f'<div style="background-color: {COL_RED};">{rec["Prob"]}</div>'
+                rec[
+                    "Confidence"
+                ] = f'<div style="background-color: {COL_RED};">{rec["Confidence"]}</div>'
+            if rec["AC_Real"] == rec["AC_Pred"]:
+                rec[
+                    "AC_Real"
+                ] = f'<div style="background-color: {COL_GREEN};">{rec["AC_Real"]}</div>'
+                rec[
+                    "AC_Pred"
+                ] = f'<div style="background-color: {COL_GREEN};">{rec["AC_Pred"]}</div>'
+            else:
+                rec[
+                    "AC_Real"
+                ] = f'<div style="background-color: {COL_RED};">{rec["AC_Real"]}</div>'
+                rec[
+                    "AC_Pred"
+                ] = f'<div style="background-color: {COL_RED};">{rec["AC_Pred"]}</div>'
+            rec_list.append(rec)
+        tmp = mf.MolFrame(pd.DataFrame(rec_list))
+        return tmp.write_grid(truncate=100, **kwargs)
+
 
 def read_csv(name: str) -> SAR:
     bn = name
@@ -279,7 +329,7 @@ def predict(molf: mf.MolFrame, model, threshold=0.5):
         # predict_class = model.predict(fp)
         predict_prob = model.predict_proba(fp)
         # return predict_class[0], predict_prob[0][1])
-        proba = predict_prob[0][1]
+        proba = round(predict_prob[0][1], 2)
         if proba > threshold:
             return 1, proba
         else:
@@ -296,6 +346,9 @@ def predict(molf: mf.MolFrame, model, threshold=0.5):
         _predict, axis=1, result_type="expand"
     )
     result.data["AC_Pred"] = result.data["AC_Pred"].astype(int)
+    result["Confidence"] = "Low"
+    result["Confidence"].loc[(result["Prob"] < 0.4) | (result["Prob"] > 0.6)] = "Medium"
+    result["Confidence"].loc[(result["Prob"] < 0.2) | (result["Prob"] > 0.8)] = "High"
     return result
 
 

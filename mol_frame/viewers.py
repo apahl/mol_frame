@@ -24,6 +24,7 @@ pd.set_option("display.max_colwidth", -1)
 from mol_frame import templ
 from mol_frame import nb_tools as nbt
 from mol_frame.mol_images import b64_mol, mol_img_tag, mol_img_file
+
 _ = mol_img_file
 
 IPYTHON = nbt.is_interactive_ipython()
