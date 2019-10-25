@@ -232,14 +232,14 @@ class SAR:
             return self.molf.write_grid(**kwargs)
         rec_list = []
         for _, rec in self.molf.data.iterrows():
-            if rec["Prob"] < 0.2 or rec["Prob"] > 0.8:
+            if rec["Confidence"] == "High":
                 rec[
                     "Prob"
                 ] = f'<div style="background-color: {COL_GREEN};">{rec["Prob"]}</div>'
                 rec[
                     "Confidence"
                 ] = f'<div style="background-color: {COL_GREEN};">{rec["Confidence"]}</div>'
-            elif rec["Prob"] < 0.4 or rec["Prob"] > 0.6:
+            elif rec["Confidence"] == "Medium":
                 rec[
                     "Prob"
                 ] = f'<div style="background-color: {COL_YELLOW};">{rec["Prob"]}</div>'
@@ -347,8 +347,12 @@ def predict(molf: mf.MolFrame, model, threshold=0.5):
     )
     result.data["AC_Pred"] = result.data["AC_Pred"].astype(int)
     result["Confidence"] = "Low"
-    result["Confidence"].loc[(result["Prob"] < 0.4) | (result["Prob"] > 0.6)] = "Medium"
-    result["Confidence"].loc[(result["Prob"] < 0.2) | (result["Prob"] > 0.8)] = "High"
+    result["Confidence"].loc[
+        (result["Prob"] < (0.8 * threshold)) | (result["Prob"] > (1.2 * threshold))
+    ] = "Medium"
+    result["Confidence"].loc[
+        (result["Prob"] < (0.4 * threshold)) | (result["Prob"] > (1.6 * threshold))
+    ] = "High"
     return result
 
 
