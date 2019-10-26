@@ -34,8 +34,10 @@ from mol_frame import mol_frame as mf, mol_images as mi
 
 # from typing import List,
 
-
-Accuracy = namedtuple("Accuracy", "num, overall, active, inactive, kappa")
+# tp, fp, tn, fn: true_pos, fals_pos, true_neg, false_neg
+Accuracy = namedtuple(
+    "Accuracy", "num, overall, active, inactive, kappa, tp, fp, tn, fn"
+)
 
 COL_WHITE = "#ffffff"
 COL_GREEN = "#ccffcc"
@@ -223,6 +225,10 @@ class SAR:
             active=true_pos / ctr_real_act,
             inactive=true_neg / ctr_real_inact,
             kappa=kappa,
+            tp=true_pos,
+            fp=false_pos,
+            tn=true_neg,
+            fn=false_neg,
         )
         return result
 
