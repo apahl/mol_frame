@@ -199,7 +199,6 @@ class SAR:
         pred = self.molf.data[
             (self.molf.data["AC_Real"].notna()) & (self.molf.data["AC_Pred"].notna())
         ].copy()
-        ctr_num_pred = len(pred)
         ctr_real_act = len(pred[pred["AC_Real"] == 1])
         ctr_real_inact = len(pred[pred["AC_Real"] == 0])
         # print(ctr_real_act, ctr_real_inact)
@@ -207,18 +206,20 @@ class SAR:
         true_neg = len(pred[(pred["AC_Real"] == 0) & (pred["AC_Pred"] == 0)])
         false_pos = len(pred[(pred["AC_Real"] == 0) & (pred["AC_Pred"] == 1)])
         false_neg = len(pred[(pred["AC_Real"] == 1) & (pred["AC_Pred"] == 0)])
-        print(true_pos, true_neg, false_pos, false_neg)
+        ctr_num_pred = true_pos + false_pos + true_neg + false_neg
+        # print(true_pos, true_neg, false_pos, false_neg)
         acc = (true_pos + true_neg) / ctr_num_pred
-        baseline = (
-            (true_neg + false_pos)
-            * (true_neg + false_neg)
-            / (ctr_num_pred * ctr_num_pred)
-        ) + (
-            (false_neg + true_pos)
-            * (false_pos + true_pos)
-            / (ctr_num_pred * ctr_num_pred)
-        )
-        kappa = (acc - baseline) / baseline
+        # baseline = (
+        #     (true_neg + false_pos)
+        #     * (true_neg + false_neg)
+        #     / (ctr_num_pred * ctr_num_pred)
+        # ) + (
+        #     (false_neg + true_pos)
+        #     * (false_pos + true_pos)
+        #     / (ctr_num_pred * ctr_num_pred)
+        # )
+        baseline = np.matmul([true_neg, false_neg], [true_neg, false_pos]) / (ctr_num_pred * ctr_num_pred) + np.matmul([false_pos, true_pos], [false_neg, true_pos]) / (ctr_num_pred * ctr_num_pred)
+        kappa = (acc - baseline) / (1 - baseline)
         result = Accuracy(
             num=ctr_num_pred,
             overall=acc,
