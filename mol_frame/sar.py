@@ -218,7 +218,13 @@ class SAR:
         #     * (false_pos + true_pos)
         #     / (ctr_num_pred * ctr_num_pred)
         # )
-        baseline = np.matmul([true_neg, false_neg], [true_neg, false_pos]) / (ctr_num_pred * ctr_num_pred) + np.matmul([false_pos, true_pos], [false_neg, true_pos]) / (ctr_num_pred * ctr_num_pred)
+        baseline = (
+            np.matmul([true_neg, false_neg], [true_neg, false_pos])
+            / (ctr_num_pred * ctr_num_pred)
+        ) + (
+            np.matmul([false_pos, true_pos], [false_neg, true_pos])
+            / (ctr_num_pred * ctr_num_pred)
+        )
         kappa = (acc - baseline) / (1 - baseline)
         result = Accuracy(
             num=ctr_num_pred,

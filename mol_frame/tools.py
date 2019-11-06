@@ -33,7 +33,7 @@ def load_config(conf="config"):
         conf_fn = op.join(os.environ["HOMEPATH"], "mol_frame", "{}.yaml".format(conf))
     try:
         with open(conf_fn, "r") as ymlfile:
-            config = yaml.load(ymlfile)
+            config = yaml.load(ymlfile, Loader=yaml.FullLoader)
     except FileNotFoundError:
         print("Configuration file {}.yaml not found.".format(conf))
         print("`load_resources()` will not work.")
