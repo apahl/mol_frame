@@ -1,15 +1,30 @@
 import time
 import pickle
 
+try:
+    import pandas as pd
+
+    PANDAS = True
+except ImportError:
+    PANDAS = False
+
 
 def is_interactive_ipython():
     try:
         get_ipython()
         ipy = True
-        # print("> interactive IPython session.")
+        print("> interactive IPython session.")
     except NameError:
         ipy = False
     return ipy
+
+
+IPYTHON = is_interactive_ipython()
+
+
+if IPYTHON:
+    from IPython.core.display import HTML, Javascript, display
+    import uuid
 
 
 def format_seconds(seconds):
@@ -20,11 +35,7 @@ def format_seconds(seconds):
     return t_str
 
 
-from IPython.core.display import HTML, Javascript, display
-import uuid
-
-
-class ProgCtr():
+class ProgCtr:
     """A ProgressCounter Class"""
 
     def __init__(self, val=0):
@@ -37,7 +48,73 @@ class ProgCtr():
         self.val += 1
 
 
-class Progressbar():
+class Result:
+    def __init__(self, headers=["Result", "Value"]):
+        self.headers = headers
+        self.list = []
+
+    def __str__(self):
+        col0_max = max([len(x[0]) for x in self.list])
+        col1_max = max([len(x[1]) for x in self.list])
+        if col0_max < len(self.headers[0]):
+            col0_max = len(self.headers[0])
+        if col1_max < len(self.headers[1]):
+            col1_max = len(self.headers[1])
+        sep = "―" * (col0_max + col1_max + 2)
+        out = [f"{self.headers[0]:{col0_max}s}  {self.headers[1]:>{col1_max}s}"]
+        out.append(sep)
+        for r in self.list:
+            out.append(f"{r[0]:{col0_max}s}  {r[1]:>{col1_max}s}")
+        return "\n".join(out)
+
+    def __repr__(self):
+        return self.__str__()
+
+    def to_html(self):
+        if PANDAS and IPYTHON:
+            return pd.DataFrame.from_records(self.list, columns=self.headers)
+        else:
+            return ""
+
+    def add(self, *res, show=True):
+        """Add one or more result tuples to the instance.
+        Show the instance."""
+        for r in res:
+            if isinstance(r, str):
+                if len(self.list) > 0:
+                    self.list.append((" ", " "))
+                self.list.append((r, " "))
+                continue
+            r = list(r)
+            if len(r) < 2:
+                r.append(" ")
+                if len(self.list) > 0:
+                    self.list.append((" ", " "))
+            else:
+                r[0] = "• " + r[0]
+                if isinstance(r[1], int):
+                    r[1] = str(r[1])
+                elif isinstance(r[1], float):
+                    r[1] = f"{r[1]:.3f}"
+            self.list.append(r)
+        if show:
+            print(self.__str__())
+
+    def remove(self, n):
+        """Remove the n last entries."""
+        self.list = self.list[:-n]
+
+    def tmp(self, *res):
+        """Temporarily add an entry.
+        During development. Add, show, delete."""
+        self.add(res)
+        self.remove(len(res))
+
+    def clear(self):
+        self.list = []
+
+
+class Progressbar:
     """A class to display a Javascript progressbar in the IPython notebook."""
 
     def __init__(self, ctr=0, end=100, color="#43ace8"):
@@ -55,7 +132,10 @@ class Progressbar():
                 <div id="{}" style="background-color:{}; height:4px; width:0%">&nbsp;</div>
             </div></td><td style="border: none;">&nbsp;ETA:&nbsp;</td><td style="border: none;"><div id="{}" width=100px></div></td>
             </tr></tbody></table>
-            """.format(self.bar_id, color, self.eta_id))
+            """.format(
+                self.bar_id, color, self.eta_id
+            )
+        )
         self.prev_time = 0.0
         self.start_time = time.time()
         display(self.pb)
@@ -74,10 +154,16 @@ class Progressbar():
             else:
                 eta_str = "..."
             self.prev_time = self.cur_time
-            display(Javascript("""
+            display(
+                Javascript(
+                    """
                                     $('div#{}').width('{}%');
                                     $('div#{}').text('{}');
-                            """.format(self.bar_id, perc, self.eta_id, eta_str)))
+                            """.format(
+                        self.bar_id, perc, self.eta_id, eta_str
+                    )
+                )
+            )
 
     def inc(self):
         self.ctr += 1
@@ -85,10 +171,16 @@ class Progressbar():
 
     def done(self):
         """finalize with a full progressbar for aesthetics"""
-        display(Javascript("""
+        display(
+            Javascript(
+                """
                                 $('div#{}').width('{}%');
                                 $('div#{}').text('{}');
-                            """.format(self.bar_id, 100, self.eta_id, "done")))
+                            """.format(
+                    self.bar_id, 100, self.eta_id, "done"
+                )
+            )
+        )
 
 
 def listify(s, sep=None, as_int=True):
