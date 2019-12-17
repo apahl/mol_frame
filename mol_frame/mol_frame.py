@@ -435,12 +435,12 @@ class MolFrame(object):
         self.data = read_csv(fn, sep=sep).data
         self.print_log("read CSV")
 
-    def write_csv(self, fn, parameters=None, sep="\t"):
+    def write_csv(self, fn, parameters=None, sep="\t", index=False):
         result = self.data
         result = drop_cols(result, [self.mol_col])
         if isinstance(parameters, list):
             result = result[parameters]
-        result.to_csv(fn, sep=sep, index=False)
+        result.to_csv(fn, sep=sep, index=index)
 
     def write_tmp(self, parameters=None):
         """Write the Mol_Frame to a temporary file. Returns the filename.
@@ -953,6 +953,7 @@ class MolFrame(object):
         colorby=None,
         options={},
         styles={},
+        tooltip=[],
         title="Scatter Plot",
         force=False,
     ):
@@ -962,7 +963,7 @@ class MolFrame(object):
         if not HOLOVIEWS:
             print("* HoloViews not available.")
             return None
-        hover = struct_hover(self, force=force)
+        hover = struct_hover(self, force=force, cols=tooltip)
         plot_options = {
             "width": 800,
             "height": 450,

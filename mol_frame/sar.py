@@ -12,8 +12,9 @@ Tools for SAR analysis."""
 import base64, pickle, time
 from io import BytesIO as IO
 import os.path as op
-from collections import Counter, namedtuple
+from collections import Counter
 from copy import deepcopy
+from dataclasses import dataclass
 
 import pandas as pd
 import numpy as np
@@ -35,9 +36,52 @@ from mol_frame import mol_frame as mf, mol_images as mi
 # from typing import List,
 
 # tp, fp, tn, fn: true_pos, fals_pos, true_neg, false_neg
-Accuracy = namedtuple(
-    "Accuracy", "num, overall, active, inactive, kappa, tp, fp, tn, fn"
-)
+@dataclass
+class Accuracy:
+    num: int
+    tp: float
+    fp: float
+    tn: float
+    fn: float
+    overall: float
+    active: float
+    inactive: float
+    kappa: float
+
+    def conf_matrix(self, numbers="absolute"):
+        if "abs" in numbers:  # absolute numbers
+            df = pd.DataFrame(
+                {
+                    "Real Active": [self.tp, self.fn, self.tp + self.fn],
+                    "Real Inactive": [self.fp, self.tn, self.fp + self.tn],
+                    "Sub Total": [self.tp + self.fp, self.fn + self.tn, self.num],
+                },
+                index=["Pred. Active", "Pred. Inactive", "Sub Total"],
+            )
+        else:  # relative numbers in percent
+            df = pd.DataFrame(
+                {
+                    "Real Active": [
+                        100 * self.tp / self.num,
+                        100 * self.fn / self.num,
+                        100 * self.tp / self.num + 100 * self.fn / self.num,
+                    ],
+                    "Real Inactive": [
+                        100 * self.fp / self.num,
+                        100 * self.tn / self.num,
+                        100 * self.fp / self.num + 100 * self.tn / self.num,
+                    ],
+                    "Sub Total": [
+                        100 * self.tp / self.num + 100 * self.fp / self.num,
+                        100 * self.fn / self.num + 100 * self.tn / self.num,
+                        100 * self.num / self.num,
+                    ],
+                },
+                index=["Pred. Active", "Pred. Inactive", "Sub Total"],
+            )
+            df = df.round(1)
+        return df
+
 
 COL_WHITE = "#ffffff"
 COL_GREEN = "#ccffcc"
@@ -45,7 +89,7 @@ COL_YELLOW = "#ffffcc"
 COL_RED = "#ffcccc"
 
 
-class SAR:
+class SAR(object):
     """Container class for SAR analysis.
     Operates on a copy of the original MolFrame.
     All methods of the SAR class return copies,
@@ -111,8 +155,8 @@ class SAR:
         result.model = self.model
         return result
 
-    def to_csv(self, fn, sep="\t"):
-        self.molf.write_csv(fn, sep="\t")
+    def to_csv(self, fn, sep="\t", index=False):
+        self.molf.write_csv(fn, sep="\t", index=index)
 
     def analyze(self, act_class="AC_Real", pred_class="AC_Pred"):
         """Prints the ratio of succcessful predictions for the molecules which have `act_class` and `pred_class` properties."""
@@ -199,8 +243,8 @@ class SAR:
         pred = self.molf.data[
             (self.molf.data["AC_Real"].notna()) & (self.molf.data["AC_Pred"].notna())
         ].copy()
-        ctr_real_act = len(pred[pred["AC_Real"] == 1])
-        ctr_real_inact = len(pred[pred["AC_Real"] == 0])
+        ctr_pred_act = len(pred[pred["AC_Pred"] == 1])
+        ctr_pred_inact = len(pred[pred["AC_Pred"] == 0])
         # print(ctr_real_act, ctr_real_inact)
         true_pos = len(pred[(pred["AC_Real"] == 1) & (pred["AC_Pred"] == 1)])
         true_neg = len(pred[(pred["AC_Real"] == 0) & (pred["AC_Pred"] == 0)])
@@ -228,14 +272,14 @@ class SAR:
         kappa = (acc - baseline) / (1 - baseline)
         result = Accuracy(
             num=ctr_num_pred,
-            overall=acc,
-            active=true_pos / ctr_real_act,
-            inactive=true_neg / ctr_real_inact,
-            kappa=kappa,
             tp=true_pos,
             fp=false_pos,
             tn=true_neg,
             fn=false_neg,
+            overall=acc,
+            active=true_pos / ctr_pred_act,
+            inactive=true_neg / ctr_pred_inact,
+            kappa=kappa,
         )
         return result
 
