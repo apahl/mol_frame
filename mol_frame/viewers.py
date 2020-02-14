@@ -18,7 +18,7 @@ import time
 
 import pandas as pd
 
-pd.set_option("display.max_colwidth", -1)
+pd.set_option("display.max_colwidth", None)
 
 
 from mol_frame import templ
@@ -138,8 +138,8 @@ def html_grid(
     link_col = kwargs.get("link_col", None)
     if link_col is not None:
         interact = (
-            False
-        )  # interact is not avail. when clicking the image should open a link
+            False  # interact is not avail. when clicking the image should open a link
+        )
     highlight = kwargs.get("highlight", None)
     mols_per_row = kwargs.get("mols_per_row", 4)
     hlsss = kwargs.get(

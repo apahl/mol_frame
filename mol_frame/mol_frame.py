@@ -41,7 +41,6 @@ molvs_l = LargestFragmentChooser()
 molvs_u = Uncharger()
 
 
-
 x = b64_mol  # make the linter shut up
 
 try:
@@ -89,6 +88,7 @@ FPDICT = {}
 
 try:
     import rdkit.Avalon.pyAvalonTools as pyAv
+
     FPDICT["avalon"] = lambda m: pyAv.GetAvalonFP(m)
 except ImportError:
     pass
@@ -228,7 +228,9 @@ class MolFrame(object):
             columns = ["$Sel$"] + columns
             tmp["$Sel$"] = ""
         tmp = tmp[columns]
-        result = tmp.to_html(formatters=formatters, escape=escape, index=index, **kwargs)
+        result = tmp.to_html(
+            formatters=formatters, escape=escape, index=index, **kwargs
+        )
 
         if rename_mol_col:
             result = result.replace(f">{self.use_col}</th>", ">Molecule</th>")
@@ -257,7 +259,7 @@ class MolFrame(object):
         id_col=None,
         b64_col=None,
         fp_col=None,
-        **kwargs
+        **kwargs,
     ):
         tmp = self.add_mols()
         return show_grid(
@@ -271,15 +273,10 @@ class MolFrame(object):
             id_col=self.id_col,
             b64_col=self.b64_col,
             fp_col=self.fp_col,
-            **kwargs
+            **kwargs,
         )
 
-    def write_tbl(
-        self,
-        title="MolFrame",
-        fn="molframe.html",
-        **kwargs
-    ):
+    def write_tbl(self, title="MolFrame", fn="molframe.html", **kwargs):
         """Known kwargs:
             selectable (bool); Currently without function
             index (bool): Whether to show the index or not, default is False.
@@ -300,7 +297,9 @@ class MolFrame(object):
         table = self.to_html(**kwargs)
         d = {}
         if "boot" in tbl_format:
-            table = templ.bootstrap_options(table, selectable, id_col=self.id_col, height=height)
+            table = templ.bootstrap_options(
+                table, selectable, id_col=self.id_col, height=height
+            )
             if selectable:
                 t = templ.MFTemplate(templ.TABLE_BOOTSTRAP_SELECT)
                 d["id_col"] = self.id_col + "s"  # Mehrzahl
@@ -315,9 +314,7 @@ class MolFrame(object):
         if IPYTHON:
             return HTML(f'<a href="{fn}">{title}</a>')
 
-    def write_grid(
-        self, title="MolGrid", fn="molgrid.html", **kwargs
-    ):
+    def write_grid(self, title="MolGrid", fn="molgrid.html", **kwargs):
         """Known kwargs: interactive (bool)
                          highlight (dict)
                          header (str)
@@ -355,7 +352,7 @@ class MolFrame(object):
             id_col=self.id_col,
             b64_col=self.b64_col,
             fp_col=self.fp_col,
-            **kwargs
+            **kwargs,
         )
 
     def info(self):
@@ -815,12 +812,15 @@ class MolFrame(object):
 
         if self.inplace:
             self.add_mols()
-            self.data["Mol"].apply(lambda x: Chem.GenerateDepictionMatching2DStructure(x, amol))
+            self.data["Mol"].apply(
+                lambda x: Chem.GenerateDepictionMatching2DStructure(x, amol)
+            )
         else:
             result = self.add_mols()
-            result.data["Mol"].apply(lambda x: Chem.GenerateDepictionMatching2DStructure(x, amol))
+            result.data["Mol"].apply(
+                lambda x: Chem.GenerateDepictionMatching2DStructure(x, amol)
+            )
             return result
-
 
     def keep_largest_fragment(self):
         """Removes salts, etc.
@@ -979,7 +979,7 @@ class MolFrame(object):
             plot_options["color_index"] = len(vdims)
         opts = {"Scatter": {"plot": plot_options, "style": plot_styles}}
         scatter_plot = hv.Scatter(self.data, x, vdims=vdims, label=title)
-        return scatter_plot(opts)
+        return scatter_plot.opts(opts)
 
 
 def groupby(df_in, by=None, num_agg=["median", "mad", "count"], str_agg="unique"):
@@ -1245,7 +1245,8 @@ def struct_hover(mf, force=False, cols=[]):
 
 
 def standardize_mol(mol):
-    if mol is None: return None
+    if mol is None:
+        return None
     mol = molvs_s.standardize(mol)
     mol = molvs_l.choose(mol)
     mol = molvs_u.uncharge(mol)
