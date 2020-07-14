@@ -220,7 +220,10 @@ def html_grid(
                 cell = templ.a(cell, a_opt)
 
         # td_opt = {"align": "center"}
-        td_opt = {"style": "text-align: center;", "bgcolor": "#FFFFFF"}
+        td_opt = {
+            "style": f"text-align: center;",
+            "bgcolor": "#FFFFFF",
+        }
         if len(props) > 0:
             td_opt["colspan"] = "2"
 
@@ -253,7 +256,15 @@ def html_grid(
                             rec["Purity"], rec["LCMS_Date"]
                         )
                 prop_cells.extend(templ.td(prop[:25], prop_opt))
-                prop_cells.extend(templ.td(prop_val[:truncate], val_opt))
+                prop_cells.extend(
+                    templ.td(
+                        templ.div(
+                            prop_val[:truncate],
+                            options={"style": f"max-width: {size-20}px;"},
+                        ),
+                        val_opt,
+                    ),
+                )
                 prop_row_cells[prop_no].extend(prop_cells)
 
         if idx % mols_per_row == 0 or idx == len(df):

@@ -38,8 +38,10 @@ import tempfile
 from glob import glob
 
 import numpy as np
+
 try:
     import pandas
+
     PANDAS = True
 except ImportError:
     PANDAS = False
@@ -76,15 +78,19 @@ from .nb_tools import format_seconds
 
 try:
     from rdkit.Avalon import pyAvalonTools as pyAv
+
     USE_AVALON = True
 except ImportError:
     USE_AVALON = False
 
 try:
     from Contrib.SA_Score import sascorer
+
     SASCORER = True
 except ImportError:
-    print("* SA scorer not available. RDKit's Contrib dir needs to be in the Python import path...")
+    print(
+        "* SA scorer not available. RDKit's Contrib dir needs to be in the Python import path..."
+    )
     SASCORER = False
 
 USE_FP = "morgan"  # other options: "avalon", "default"
@@ -98,7 +104,6 @@ except NameError:
 
 if IPY:
     from IPython.core.display import HTML, display, clear_output
-
 
 
 def get_value(str_val):
@@ -129,7 +134,6 @@ class Summary(OrderedDict):
         if self.timeit:
             self.t_start = time.time()
 
-
     def __html__(self, final=False):
         if final:
             pipe_status = "finished."
@@ -143,10 +147,11 @@ class Summary(OrderedDict):
             row = """<tr><td>{}</td><td>{}</td></tr>""".format(k, str(value))
             rows.append(row)
         seconds = time.time() - self.t_start
-        row = """<tr bgcolor="#E9E9E9"><td><i>Time elapsed</i></td><td><i>{}</i></td></tr>""".format(format_seconds(seconds))
+        row = """<tr bgcolor="#E9E9E9"><td><i>Time elapsed</i></td><td><i>{}</i></td></tr>""".format(
+            format_seconds(seconds)
+        )
         rows.append(row)
         return outer.format(pipe_status, "".join(rows))
-
 
     def __str__(self):
         s_list = []
@@ -158,7 +163,9 @@ class Summary(OrderedDict):
             if self.timeit and idx == len(keys):
                 line_end = ""
             if type(value) == float:
-                s_list.append("{k:{mlen}s}: {val:10.2f}".format(k=k, mlen=mlen, val=value))
+                s_list.append(
+                    "{k:{mlen}s}: {val:10.2f}".format(k=k, mlen=mlen, val=value)
+                )
                 s_list.append(line_end)
             else:
                 s_list.append("{k:{mlen}s}: {val:>7}".format(k=k, mlen=mlen, val=value))
@@ -170,15 +177,12 @@ class Summary(OrderedDict):
 
         return "".join(s_list)
 
-
     def __repr__(self):
         return self.__str__()
-
 
     def print(self):
         """print the content of a dict or Counter object in a formatted way"""
         print(self.__str__())
-
 
     def update(self, final=False):
         if IPY:
@@ -193,8 +197,6 @@ def standardize_mol(mol):
     mol = molvs_l.choose(mol)
     mol = molvs_u.uncharge(mol)
     return mol
-
-
 
 
 def pipe(val, *forms):
@@ -234,8 +236,9 @@ def pipe(val, *forms):
     return result
 
 
-def start_csv_reader(fn, max_records=0, tag=True, sep="\t",
-                     summary=None, comp_id="start_csv_reader"):
+def start_csv_reader(
+    fn, max_records=0, tag=True, sep="\t", summary=None, comp_id="start_csv_reader"
+):
     """A reader for csv files.
 
     Returns:
@@ -247,7 +250,6 @@ def start_csv_reader(fn, max_records=0, tag=True, sep="\t",
         max_records (int): maximum number of records to read, 0 means all.
         summary (Summary): a Counter class to collect runtime statistics.
         comp_id: (str): the component Id to use for the summary."""
-
 
     fn_list = glob(fn)
     rec_counter = 0
@@ -265,9 +267,14 @@ def start_csv_reader(fn, max_records=0, tag=True, sep="\t",
         prev_time = time.time()
         for row_dict in reader:
             rec_counter += 1
-            if max_records > 0 and rec_counter > max_records: break
+            if max_records > 0 and rec_counter > max_records:
+                break
             # make a copy with non-empty values
-            rec = {k: get_value(v) for k, v in row_dict.items() if v is not None and v != ""}  # make a copy with non-empty values
+            rec = {
+                k: get_value(v)
+                for k, v in row_dict.items()
+                if v is not None and v != ""
+            }  # make a copy with non-empty values
             if len(fn) > 1 and tag:
                 rec["tag"] = filen
 
@@ -288,13 +295,14 @@ def start_csv_reader(fn, max_records=0, tag=True, sep="\t",
         summary.update(final=True)
 
 
-
 def start_cache_reader(name, summary=None, comp_id="start_cache_reader"):
     fn = "/tmp/{}".format(name)
     start_csv_reader(fn, summary=None, comp_id=comp_id)
 
 
-def start_sdf_reader(fn, max_records=0, tag=True, summary=None, comp_id="start_sdf_reader"):
+def start_sdf_reader(
+    fn, max_records=0, tag=True, summary=None, comp_id="start_sdf_reader"
+):
     """A reader for SD files.
 
     Returns:
@@ -321,7 +329,8 @@ def start_sdf_reader(fn, max_records=0, tag=True, summary=None, comp_id="start_s
         reader = Chem.ForwardSDMolSupplier(f)
         prev_time = time.time()
         for mol in reader:
-            if max_records > 0 and rec_counter > max_records: break
+            if max_records > 0 and rec_counter > max_records:
+                break
             rec = {}
             rec_counter += 1
             if mol:
@@ -329,7 +338,9 @@ def start_sdf_reader(fn, max_records=0, tag=True, summary=None, comp_id="start_s
                     rec["tag"] = filen
                 for prop in mol.GetPropNames():
                     val = mol.GetProp(prop)
-                    if len(val) > 0:  # transfer only those properties to the stream which carry a value
+                    if (
+                        len(val) > 0
+                    ):  # transfer only those properties to the stream which carry a value
                         rec[prop] = get_value(val)
                     mol.ClearProp(prop)
 
@@ -338,7 +349,9 @@ def start_sdf_reader(fn, max_records=0, tag=True, summary=None, comp_id="start_s
                 if summary is not None:
                     summary[comp_id] = rec_counter
                     curr_time = time.time()
-                    if curr_time - prev_time > 2.0:  # write the log only every two seconds
+                    if (
+                        curr_time - prev_time > 2.0
+                    ):  # write the log only every two seconds
                         prev_time = curr_time
                         print(summary, file=open("pipeline.log", "w"))
                         summary.update()
@@ -357,7 +370,9 @@ def start_sdf_reader(fn, max_records=0, tag=True, summary=None, comp_id="start_s
         summary.update()
 
 
-def start_stream_from_dict(d, summary=None, comp_id="start_stream_from_dict", show_first=False):
+def start_stream_from_dict(
+    d, summary=None, comp_id="start_stream_from_dict", show_first=False
+):
     """Provide a data stream from a dict."""
     prev_time = time.time()
     d_keys = list(d.keys())
@@ -387,12 +402,15 @@ def start_stream_from_dict(d, summary=None, comp_id="start_stream_from_dict", sh
         summary.update()
 
 
-def start_stream_from_mol_list(mol_list, summary=None, comp_id="start_stream_from_mol_list"):
+def start_stream_from_mol_list(
+    mol_list, summary=None, comp_id="start_stream_from_mol_list"
+):
     """Provide a data stream from a Mol_List."""
     prev_time = time.time()
     rec_counter = 0
     for orig_mol in mol_list:
-        if not orig_mol: continue
+        if not orig_mol:
+            continue
         mol = deepcopy(orig_mol)
         rec = {}
         props = mol.GetPropNames()
@@ -443,7 +461,8 @@ def stop_csv_writer(stream, fn, sep="\t", summary=None, comp_id="stop_csv_writer
         for key in fields:
             if key in cp:
                 val = cp[key]
-                if val is None: val = ""
+                if val is None:
+                    val = ""
                 line.append(str(val))
                 cp.pop(key)
             else:
@@ -453,7 +472,8 @@ def stop_csv_writer(stream, fn, sep="\t", summary=None, comp_id="stop_csv_writer
         for key in cp:
             fields[key] = 0  # dummy value
             val = cp[key]
-            if val is None: val = ""
+            if val is None:
+                val = ""
             line.append(str(val))
 
         tmp.write("\t".join(line) + "\n")
@@ -477,7 +497,6 @@ def stop_csv_writer(stream, fn, sep="\t", summary=None, comp_id="stop_csv_writer
         num_fill_records = num_columns - len(line)
         fill = [""] * num_fill_records
         line.extend(fill)
-
 
         f.write(sep.join(line) + "\n")
 
@@ -510,7 +529,8 @@ def stop_sdf_writer(stream, fn, max=500, summary=None, comp_id="stop_sdf_writer"
 
         # assign the values from rec to the mol object
         for key in rec:
-            if key == "mol": continue
+            if key == "mol":
+                continue
             val = rec[key]
             if isinstance(val, str):
                 if val != "":
@@ -523,7 +543,8 @@ def stop_sdf_writer(stream, fn, max=500, summary=None, comp_id="stop_sdf_writer"
 
         writer.write(mol)
 
-        if rec_counter >= max: break
+        if rec_counter >= max:
+            break
 
     writer.close()
 
@@ -544,8 +565,10 @@ def stop_dict_from_stream(stream, summary=None, comp_id="stop_dict_from_stream")
                 stream_dict[field] = rec_counter * [np.nan]
                 stream_keys.add(field)
 
-        empty_fields = stream_keys - set(rec.keys())    # handle fields which are in the stream,
-        for field in empty_fields:                      # but not in this record
+        empty_fields = stream_keys - set(
+            rec.keys()
+        )  # handle fields which are in the stream,
+        for field in empty_fields:  # but not in this record
             stream_dict[field].append(np.nan)
 
         if summary is not None:
@@ -559,14 +582,18 @@ def stop_df_from_stream(stream, summary=None, comp_id="stop_df_from_stream"):
     The molecules need to be present in the stream,
     e.g. generated by `pipe_mol_from_smiles`."""
 
-    df = pandas.DataFrame.from_dict(stop_dict_from_stream(stream, summary=summary, comp_id=comp_id))
+    df = pandas.DataFrame.from_dict(
+        stop_dict_from_stream(stream, summary=summary, comp_id=comp_id)
+    )
     return df
 
 
 def stop_molframe_from_stream(stream, summary=None, comp_id="stop_df_from_stream"):
     """Generates a MolFrame out of the data stream."""
 
-    df = pandas.DataFrame.from_dict(stop_dict_from_stream(stream, summary=summary, comp_id=comp_id))
+    df = pandas.DataFrame.from_dict(
+        stop_dict_from_stream(stream, summary=summary, comp_id=comp_id)
+    )
     df_mol = mf.MolFrame()
     df_mol.data = df
     if "Mol" in df.keys():
@@ -595,7 +622,14 @@ def stop_cache_writer(stream, name, summary=None, comp_id="stop_cache_writer"):
     stop_csv_writer(stream, fn, summary=summary, comp_id=comp_id)
 
 
-def pipe_mol_from_smiles(stream, in_smiles="Smiles", standardize=True, remove=True, summary=None, comp_id="pipe_mol_from_smiles"):
+def pipe_mol_from_smiles(
+    stream,
+    in_smiles="Smiles",
+    standardize=True,
+    remove=True,
+    summary=None,
+    comp_id="pipe_mol_from_smiles",
+):
     """Generate a molecule on the stream from Smiles."""
     rec_counter = 0
     for rec in stream:
@@ -615,8 +649,9 @@ def pipe_mol_from_smiles(stream, in_smiles="Smiles", standardize=True, remove=Tr
                 yield rec
 
 
-
-def pipe_mol_from_b64(stream, in_b64="Mol_b64", remove=True, summary=None, comp_id="pipe_mol_from_b64"):
+def pipe_mol_from_b64(
+    stream, in_b64="Mol_b64", remove=True, summary=None, comp_id="pipe_mol_from_b64"
+):
     """Generate a molecule on the stream from a b64 encoded mol object."""
     rec_counter = 0
     for rec in stream:
@@ -639,8 +674,13 @@ def pipe_murcko_smiles(stream, summary=None, comp_id="pipe_murcko_smiles"):
     The property `murcko_smiles` is added to each record."""
     rec_counter = 0
     for rec in stream:
+        try:
+            msmiles = MurckoScaffold.MurckoScaffoldSmiles(mol=rec["mol"])
+        except Chem.AtomValenceException:
+            # In rare cases (1 / 400k for ChEMBL), the scaffolding fails with this error
+            # Just skip these records
+            continue
         rec_counter += 1
-        msmiles = MurckoScaffold.MurckoScaffoldSmiles(mol=rec["mol"])
         if summary is not None:
             summary[comp_id] = rec_counter
 
@@ -663,7 +703,15 @@ def pipe_remove_dups(stream, field, summary=None, comp_id="pipe_remove_dups"):
                 yield rec
 
 
-def start_mol_csv_reader(fn, max_records=0, in_b64="Mol_b64", tag=True, sep="\t", summary=None, comp_id="start_mol_csv_reader"):
+def start_mol_csv_reader(
+    fn,
+    max_records=0,
+    in_b64="Mol_b64",
+    tag=True,
+    sep="\t",
+    summary=None,
+    comp_id="start_mol_csv_reader",
+):
     """A reader for csv files containing molecules in binary b64 format.
 
     Returns:
@@ -682,7 +730,13 @@ def start_mol_csv_reader(fn, max_records=0, in_b64="Mol_b64", tag=True, sep="\t"
     return mol
 
 
-def pipe_mol_to_smiles(stream, out_smiles="Smiles", isomeric=False, summary=None, comp_id="pipe_mol_to_smiles"):
+def pipe_mol_to_smiles(
+    stream,
+    out_smiles="Smiles",
+    isomeric=False,
+    summary=None,
+    comp_id="pipe_mol_to_smiles",
+):
     """Calculate Smiles from the mol object onthe stram."""
     rec_counter = 0
     for rec in stream:
@@ -723,8 +777,15 @@ def check_2d_coords(mol, force=False):
             mol.Compute2DCoords()
 
 
-def pipe_calc_ic50(stream, prop_pic50, prop_ic50=None, unit="uM", digits=3,
-                   summary=None, comp_id="pipe_calc_ic50"):
+def pipe_calc_ic50(
+    stream,
+    prop_pic50,
+    prop_ic50=None,
+    unit="uM",
+    digits=3,
+    summary=None,
+    comp_id="pipe_calc_ic50",
+):
     """Calculates the IC50 from a pIC50 value that has to be present in the record.
     Parameters:
         prop_pic50 (string): the name of the pIC50 prop from which to calc the IC50.
@@ -753,7 +814,9 @@ def pipe_calc_ic50(stream, prop_pic50, prop_ic50=None, unit="uM", digits=3,
         yield rec
 
 
-def pipe_calc_props(stream, props, force2d=False, summary=None, comp_id="pipe_calc_props"):
+def pipe_calc_props(
+    stream, props, force2d=False, summary=None, comp_id="pipe_calc_props"
+):
     """Calculate properties from the Mol_List.
     props can be a single property or a list of properties.
 
@@ -823,14 +886,16 @@ def pipe_calc_props(stream, props, force2d=False, summary=None, comp_id="pipe_ca
             yield rec
 
 
-def pipe_custom_filter(stream, run_code, start_code=None, summary=None, comp_id="pipe_custom_filter"):
+def pipe_custom_filter(
+    stream, run_code, start_code=None, summary=None, comp_id="pipe_custom_filter"
+):
     """If the evaluation of run_code is true, the respective record will be put on the stream."""
     rec_counter = 0
     if start_code is not None:
         exec(start_code)
 
     # pre-compile the run_code statement for performance reasons
-    byte_code = compile(run_code, '<string>', 'eval')
+    byte_code = compile(run_code, "<string>", "eval")
     for rec in stream:
         if eval(byte_code):
             rec_counter += 1
@@ -840,12 +905,14 @@ def pipe_custom_filter(stream, run_code, start_code=None, summary=None, comp_id=
             yield rec
 
 
-def pipe_custom_man(stream, run_code, start_code=None, stop_code=None, comp_id="pipe_custom_man"):
+def pipe_custom_man(
+    stream, run_code, start_code=None, stop_code=None, comp_id="pipe_custom_man"
+):
     """If the evaluation of run_code is true, the respective record will be put on the stream."""
     if start_code is not None:
         exec(start_code)
 
-    byte_code = compile(run_code, '<string>', 'exec')
+    byte_code = compile(run_code, "<string>", "exec")
     for rec in stream:
         exec(byte_code)
 
@@ -855,7 +922,9 @@ def pipe_custom_man(stream, run_code, start_code=None, stop_code=None, comp_id="
         exec(stop_code)
 
 
-def pipe_has_prop_filter(stream, prop, invert=False, summary=None, comp_id="pipe_has_prop_filter"):
+def pipe_has_prop_filter(
+    stream, prop, invert=False, summary=None, comp_id="pipe_has_prop_filter"
+):
     rec_counter = 0
 
     for rec in stream:
@@ -875,14 +944,17 @@ def pipe_has_prop_filter(stream, prop, invert=False, summary=None, comp_id="pipe
             yield rec
 
 
-def pipe_id_filter(stream, cpd_ids, id_prop="Compound_Id", summary=None, comp_id="pipe_id_filter"):
+def pipe_id_filter(
+    stream, cpd_ids, id_prop="Compound_Id", summary=None, comp_id="pipe_id_filter"
+):
     rec_counter = 0
     cpd_ids = cpd_ids.split(",")
 
     cpd_ids = {get_value(c_id) for c_id in cpd_ids}  # set comprehension
 
     for rec in stream:
-        if id_prop not in rec: continue
+        if id_prop not in rec:
+            continue
 
         if rec[id_prop] in cpd_ids:
             rec_counter += 1
@@ -893,7 +965,15 @@ def pipe_id_filter(stream, cpd_ids, id_prop="Compound_Id", summary=None, comp_id
             yield rec
 
 
-def pipe_mol_filter(stream, query, smarts=False, invert=False, add_h=False, summary=None, comp_id="pipe_mol_filter"):
+def pipe_mol_filter(
+    stream,
+    query,
+    smarts=False,
+    invert=False,
+    add_h=False,
+    summary=None,
+    comp_id="pipe_mol_filter",
+):
     rec_counter = 0
     if "[H]" in query or "#1" in query:
         add_h = True
@@ -907,7 +987,8 @@ def pipe_mol_filter(stream, query, smarts=False, invert=False, add_h=False, summ
         return None
 
     for rec in stream:
-        if "mol" not in rec: continue
+        if "mol" not in rec:
+            continue
 
         mol = rec["mol"]
 
@@ -950,9 +1031,11 @@ def pipe_erg_filter(stream, query, cutoff=0.7, summary=None, comp_id="pipe_erg_f
     query_fp = ERG.GetErGFingerprint(query_mol)
 
     for rec in stream:
-        if "mol" not in rec: continue
+        if "mol" not in rec:
+            continue
         mol = rec["mol"]
-        if mol is None: continue
+        if mol is None:
+            continue
         mol_fp = ERG.GetErGFingerprint(mol)
         sim = tools.erg_sim(mol_fp, query_fp)
         if sim >= cutoff:
@@ -968,11 +1051,11 @@ def pipe_calc_fp_b64(stream, summary=None, comp_id="pipe_calc_fp"):
     The FP is calculated from the Murcko scaffold of the mol."""
     rec_counter = 0
     for rec in stream:
-        if "mol" not in rec: continue
+        if "mol" not in rec:
+            continue
         murcko_mol = MurckoScaffold.GetScaffoldForMol(rec["mol"])
         if USE_FP == "morgan":
-            mol_fp = Desc.rdMolDescriptors.GetMorganFingerprintAsBitVect(
-                murcko_mol, 2)
+            mol_fp = Desc.rdMolDescriptors.GetMorganFingerprintAsBitVect(murcko_mol, 2)
         elif USE_FP == "avalon":
             mol_fp = pyAv.GetAvalonFP(murcko_mol, 1024)
         else:
@@ -1004,13 +1087,18 @@ def pipe_sim_filter(stream, query, cutoff=80, summary=None, comp_id="pipe_sim_fi
         query_fp = FingerprintMols.FingerprintMol(murcko_mol)
 
     for rec in stream:
-        if "FP_b64" in rec:  # use the pre-defined fingerprint if it is present in the stream
+        if (
+            "FP_b64" in rec
+        ):  # use the pre-defined fingerprint if it is present in the stream
             mol_fp = pickle.loads(b64.b64decode(rec["FP_b64"]))
         else:
-            if "mol" not in rec: continue
+            if "mol" not in rec:
+                continue
             murcko_mol = MurckoScaffold.GetScaffoldForMol(rec["mol"])
             if USE_FP == "morgan":
-                mol_fp = Desc.rdMolDescriptors.GetMorganFingerprintAsBitVect(murcko_mol, 2)
+                mol_fp = Desc.rdMolDescriptors.GetMorganFingerprintAsBitVect(
+                    murcko_mol, 2
+                )
             elif USE_FP == "avalon":
                 mol_fp = pyAv.GetAvalonFP(murcko_mol, 1024)
             else:
@@ -1045,12 +1133,15 @@ def pipe_remove_props(stream, props, summary=None, comp_id="pipe_remove_props"):
         yield rec
 
 
-def pipe_keep_props(stream, props, summary=None, comp_id="pipe_keep_props", show_first=False):
+def pipe_keep_props(
+    stream, props, summary=None, comp_id="pipe_keep_props", show_first=False
+):
     """Keep only the listed properties on the stream. "mol" is always kept by this component.
     props can be a single property name or a list of property names.
     show_first prints the first records for debugging purposes."""
 
-    props = props.split(",")
+    if isinstance(props, str):
+        props = props.split(",")
 
     if "mol" not in props:
         props.append("mol")
@@ -1085,7 +1176,9 @@ def pipe_sleep(stream, duration):
         yield rec
 
 
-def pipe_rename_prop(stream, prop_old, prop_new, summary=None, comp_id="pipe_rename_prop"):
+def pipe_rename_prop(
+    stream, prop_old, prop_new, summary=None, comp_id="pipe_rename_prop"
+):
     """Rename a property on the stream.
         Parameters:
         prop_old (str): old name of the property
@@ -1103,8 +1196,16 @@ def pipe_rename_prop(stream, prop_old, prop_new, summary=None, comp_id="pipe_ren
         yield rec
 
 
-def pipe_join_data_from_file(stream, fn, join_on, behaviour="joined_only", append=True,
-                             summary=None, comp_id="pipe_join_data_from_file", show_first=False):
+def pipe_join_data_from_file(
+    stream,
+    fn,
+    join_on,
+    behaviour="joined_only",
+    append=True,
+    summary=None,
+    comp_id="pipe_join_data_from_file",
+    show_first=False,
+):
     """Joins data from a csv or SD file.
     CAUTION: The input stream will be held in memory by this component!
 
@@ -1122,13 +1223,16 @@ def pipe_join_data_from_file(stream, fn, join_on, behaviour="joined_only", appen
 
     # collect the records from the stream in a list, store the position of the join_on properties in a dict
     stream_rec_list = []
-    stream_id_list = []  # list to hold the join_on properties and their positions in the stream_rec_list
+    stream_id_list = (
+        []
+    )  # list to hold the join_on properties and their positions in the stream_rec_list
     prev_time = time.time()
 
     stream_counter = -1
     for rec in stream:
         stream_join_on_val = rec.get(join_on, False)
-        if stream_join_on_val is False: continue
+        if stream_join_on_val is False:
+            continue
         stream_counter += 1
         stream_rec_list.append(rec)
         stream_id_list.append(stream_join_on_val)
@@ -1141,7 +1245,8 @@ def pipe_join_data_from_file(stream, fn, join_on, behaviour="joined_only", appen
     rec_counter = 0
     for rec in rd:
         rec_join_on_val = rec.get(join_on, False)
-        if not rec_join_on_val: continue
+        if not rec_join_on_val:
+            continue
 
         while rec_join_on_val in stream_id_list:
             rec_copy = deepcopy(rec)
@@ -1199,9 +1304,11 @@ def pipe_standardize_mol(stream, summary=None, comp_id="pipe_standardize_mol"):
         Applies MolVS Standardizer, LargestFragment and Uncharger."""
     rec_counter = 0
     for rec in stream:
-        if "mol" not in rec: continue
+        if "mol" not in rec:
+            continue
         mol = rec["mol"]
-        if not mol: continue
+        if not mol:
+            continue
         mol = standardize_mol(mol)
         rec["mol"] = mol
 
@@ -1216,9 +1323,11 @@ def pipe_keep_largest_fragment(stream, summary=None, comp_id="pipe_keep_largest_
     rec_counter = 0
     frag_counter = 0
     for rec in stream:
-        if "mol" not in rec: continue
+        if "mol" not in rec:
+            continue
         mol = rec["mol"]
-        if not mol: continue
+        if not mol:
+            continue
 
         mols = Chem.GetMolFrags(mol, asMols=True)
         if len(mols) > 1:
@@ -1241,33 +1350,37 @@ def pipe_keep_largest_fragment(stream, summary=None, comp_id="pipe_keep_largest_
 def pipe_neutralize_mol(stream, summary=None, comp_id="pipe_neutralize_mol"):
     pattern = (
         # Imidazoles
-        ('[n+;H]', 'n'),
+        ("[n+;H]", "n"),
         # Amines
-        ('[N+;!H0]', 'N'),
+        ("[N+;!H0]", "N"),
         # Carboxylic acids and alcohols
-        ('[$([O-]);!$([O-][#7])]', 'O'),
+        ("[$([O-]);!$([O-][#7])]", "O"),
         # Thiols
-        ('[S-;X1]', 'S'),
+        ("[S-;X1]", "S"),
         # Sulfonamides
-        ('[$([N-;X2]S(=O)=O)]', 'N'),
+        ("[$([N-;X2]S(=O)=O)]", "N"),
         # Enamines
-        ('[$([N-;X2][C,N]=C)]', 'N'),
+        ("[$([N-;X2][C,N]=C)]", "N"),
         # Tetrazoles
-        ('[n-]', '[nH]'),
+        ("[n-]", "[nH]"),
         # Sulfoxides
-        ('[$([S-]=O)]', 'S'),
+        ("[$([S-]=O)]", "S"),
         # Amides
-        ('[$([N-]C=O)]', 'N'),
+        ("[$([N-]C=O)]", "N"),
     )
 
-    reactions = [(Chem.MolFromSmarts(x), Chem.MolFromSmiles(y, False)) for x, y in pattern]
+    reactions = [
+        (Chem.MolFromSmarts(x), Chem.MolFromSmiles(y, False)) for x, y in pattern
+    ]
 
     rec_counter = 0
     neutr_counter = 0
     for rec in stream:
-        if "mol" not in rec: continue
+        if "mol" not in rec:
+            continue
         mol = rec["mol"]
-        if not mol: continue
+        if not mol:
+            continue
 
         replaced = False
         for reactant, product in reactions:
@@ -1297,9 +1410,11 @@ def pipe_add_inchikeys(stream, summary=None, comp_id="pipe_add_inchikeys"):
         Applies MolVS Standardizer, LargestFragment and Uncharger."""
     rec_counter = 0
     for rec in stream:
-        if "mol" not in rec: continue
+        if "mol" not in rec:
+            continue
         mol = rec["mol"]
-        if not mol: continue
+        if not mol:
+            continue
         try:
             rec["InchiKey"] = Chem.inchi.MolToInchiKey(mol)
         except ValueError:
@@ -1336,7 +1451,16 @@ def pipe_inspect_stream(stream, fn="pipe_inspect.txt", exclude=None, summary=Non
         yield rec
 
 
-def pipe_merge_data(stream, merge_on, str_props="concat", num_props="mean", mark=True, digits=3, summary=None, comp_id="pipe_merge_data"):
+def pipe_merge_data(
+    stream,
+    merge_on,
+    str_props="concat",
+    num_props="mean",
+    mark=True,
+    digits=3,
+    summary=None,
+    comp_id="pipe_merge_data",
+):
     """Merge the data from the stream on the `merge_on` property.
     WARNING: The stream is collected in memory by this component!
 
@@ -1368,12 +1492,18 @@ def pipe_merge_data(stream, merge_on, str_props="concat", num_props="mean", mark
         elif isinstance(val_list[0], float) or isinstance(val_list[0], int):
             if "mean" in num_props:
                 val = np.mean(val_list)
-                return (np.round(val, digits), "Std",  # Standard deviation
-                        np.round(np.std(val_list), digits))
+                return (
+                    np.round(val, digits),
+                    "Std",  # Standard deviation
+                    np.round(np.std(val_list), digits),
+                )
             if "median" in num_props:
                 val = np.median(val_list)
-                return (np.round(val, digits), "MAD",  # Median Absolute Deviation
-                        np.round(np.median([abs(x - val) for x in val_list]), digits))
+                return (
+                    np.round(val, digits),
+                    "MAD",  # Median Absolute Deviation
+                    np.round(np.median([abs(x - val) for x in val_list]), digits),
+                )
             if "first" in num_props:
                 return val_list[0], None, None
             if "last" in num_props:
@@ -1384,13 +1514,13 @@ def pipe_merge_data(stream, merge_on, str_props="concat", num_props="mean", mark
         else:
             return val_list[0], None, None
 
-
     merged = defaultdict(lambda: defaultdict(list))  # defaultdict of defaultdict(list)
     if summary is not None:
         summary[comp_id] = "collecting..."
 
     for rec in stream:
-        if merge_on not in rec: continue
+        if merge_on not in rec:
+            continue
 
         merge_on_val = rec.pop(merge_on)
         for prop in rec.keys():
@@ -1408,7 +1538,9 @@ def pipe_merge_data(stream, merge_on, str_props="concat", num_props="mean", mark
         for prop in merged[item]:
             val_list = merged[item][prop]
             if len(val_list) > 1:
-                merge_result = _get_merged_val_from_val_list(val_list, str_props, num_props)
+                merge_result = _get_merged_val_from_val_list(
+                    val_list, str_props, num_props
+                )
                 rec[prop] = merge_result[0]
                 if merge_result[1] is not None:  # deviation values from mean or median
                     rec["{}_{}".format(prop, merge_result[1])] = merge_result[2]
@@ -1433,7 +1565,6 @@ def pipe_merge_data(stream, merge_on, str_props="concat", num_props="mean", mark
         summary.update()
 
 
-
 def dict_from_csv(fn, max_records=0):
     """Read a CSV file and return a dict with the headers a keys and the columns as value lists.
     Empty cells are np.nan."""
@@ -1455,7 +1586,8 @@ def dict_from_csv(fn, max_records=0):
             else:
                 d[k].append(get_value(v))
 
-        if max_records > 0 and rec_counter >= max_records: break
+        if max_records > 0 and rec_counter >= max_records:
+            break
 
     print("  > {} records read".format(rec_counter))
 
@@ -1486,7 +1618,9 @@ def generate_pipe_from_csv(fn):
 
         if line_no == 1:
             if row_dict["KWargs"]:
-                pipe_list.append("rd = p.{Component}({Args}, **{{{KWargs}}})\n".format(**row_dict))
+                pipe_list.append(
+                    "rd = p.{Component}({Args}, **{{{KWargs}}})\n".format(**row_dict)
+                )
             else:
                 pipe_list.append("rd = p.{Component}({Args})\n".format(**row_dict))
             pipe_list.append("res = p.pipe(\n    rd,\n")
@@ -1497,17 +1631,17 @@ def generate_pipe_from_csv(fn):
             if row_dict["Args"]:
                 pipe_list.append(", {}".format(row_dict["Args"]))
             if row_dict["KWargs"]:
-                pipe_list.append(', {{{}}}'.format(row_dict["KWargs"]))
-            pipe_list.append(')')
+                pipe_list.append(", {{{}}}".format(row_dict["KWargs"]))
+            pipe_list.append(")")
         else:
-            pipe_list.append('    p.{}'.format(row_dict["Component"]))
+            pipe_list.append("    p.{}".format(row_dict["Component"]))
 
         if line_no < num_of_lines:
             pipe_list.append(",\n")
         else:
             pipe_list.append("\n")
 
-    pipe_list.append(')')
+    pipe_list.append(")")
 
     pipe_str = "".join(pipe_list)
     if IPY:

@@ -245,7 +245,7 @@ class MolFrame(object):
             index (bool): Whether to display the index or not, default is False.
             rename_mol_col (bool)"""
         kwargs.pop("selectable", False)
-        kwargs["height"] = 0
+        # kwargs["height"] = 0
         return HTML(self.to_html(**kwargs))
 
     def show_grid(
@@ -870,7 +870,7 @@ class MolFrame(object):
         print_log(result.data, "id filter")
         return result
 
-    def mol_filter(self, query, add_h=False):
+    def mol_filter(self, query, is_smarts=False, add_h=False):
         """Substructure filter. Returns a new MolFrame instance.
         ``query`` has to be a Smiles string."""
         if len(self.data) > 5000:
@@ -878,7 +878,10 @@ class MolFrame(object):
             pb = nbt.Progressbar(end=len(self.data))
         else:
             show_prog = False
-        query_mol = Chem.MolFromSmiles(query)
+        if is_smarts:
+            query_mol = Chem.MolFromSmarts(query)
+        else:
+            query_mol = Chem.MolFromSmiles(query)
         if not query_mol:
             raise ValueError("Could not generate query mol.")
         if "[H]" in query or "#1" in query:
