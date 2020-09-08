@@ -49,7 +49,7 @@ def add_coords(mol, force=False):
             force = True  # no 2D coords... calculate them
 
     if force:
-        if USE_RDKIT_NEW_COORD:
+        if USE_RDKIT_NEW_COORD and mol.GetNumAtoms() <= 75:
             AddCoords(mol)
             rescale(mol, f=1.4)
         else:

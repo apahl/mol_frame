@@ -221,7 +221,7 @@ def html_grid(
 
         # td_opt = {"align": "center"}
         td_opt = {
-            "style": f"text-align: center;",
+            "style": "text-align: center;",
             "bgcolor": "#FFFFFF",
         }
         if len(props) > 0:
