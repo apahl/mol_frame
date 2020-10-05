@@ -594,7 +594,7 @@ class MolFrame(object):
         else:
             result = self.copy()
             result.data[self.mol_col] = result.data[self.mol_col].apply(standardize_mol)
-            print_log(result.data, "add smiles")
+            print_log(result.data, "standardize")
             return result
 
     def add_inchikeys(self):

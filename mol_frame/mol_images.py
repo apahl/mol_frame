@@ -85,7 +85,10 @@ def mol_img_file(mol, size=300, hlsss=None):
         img = autocrop(Draw.MolsToGridImage(mol, size=(size, size)))
     else:
         if isinstance(mol, str):  # convert from Smiles on-the-fly, when necessary
-            mol = Chem.MolFromSmiles(mol)
+            if len(mol) > 0:
+                mol = Chem.MolFromSmiles(mol)
+            else:
+                mol = Chem.MolFromSmiles("*")
         if mol is None:
             mol = Chem.MolFromSmiles("*")
         if hlsss is not None:
