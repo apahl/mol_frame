@@ -1406,8 +1406,7 @@ def pipe_neutralize_mol(stream, summary=None, comp_id="pipe_neutralize_mol"):
 
 
 def pipe_add_inchikeys(stream, summary=None, comp_id="pipe_add_inchikeys"):
-    """Standardizes the molecules in the Mol column.
-        Applies MolVS Standardizer, LargestFragment and Uncharger."""
+    """Add InchIKeys."""
     rec_counter = 0
     for rec in stream:
         if "mol" not in rec:
@@ -1415,10 +1414,15 @@ def pipe_add_inchikeys(stream, summary=None, comp_id="pipe_add_inchikeys"):
         mol = rec["mol"]
         if not mol:
             continue
+        inchi = ""
         try:
-            rec["InchiKey"] = Chem.inchi.MolToInchiKey(mol)
+            inchi = Chem.inchi.MolToInchiKey(mol)
         except ValueError:
-            rec["InchiKey"] = "FAILED."
+            inchi = "FAILED."
+        if len(inchi) < 2:
+            inchi = "FAILED."
+        rec["InChIKey"] = inchi
+
         rec_counter += 1
         if summary is not None:
             summary[comp_id] = rec_counter

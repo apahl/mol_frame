@@ -278,15 +278,15 @@ class MolFrame(object):
 
     def write_tbl(self, title="MolFrame", fn="molframe.html", **kwargs):
         """Known kwargs:
-            selectable (bool); Currently without function
-            index (bool): Whether to show the index or not, default is False.
-            intro (str): Optional HTML text that will be inserted above the table.
-            format (str): Formatting used for the table. Available options: ``simple``, ``bootstrap``.
-            formatters (dict or None)
-            escape (bool): Default is False.
-            rename_mol_col (bool): Default is True.
-            selectable (bool): Default is False.
-            height (int): Defines the height of the table and enables a fixed header."""
+        selectable (bool); Currently without function
+        index (bool): Whether to show the index or not, default is False.
+        intro (str): Optional HTML text that will be inserted above the table.
+        format (str): Formatting used for the table. Available options: ``simple``, ``bootstrap``.
+        formatters (dict or None)
+        escape (bool): Default is False.
+        rename_mol_col (bool): Default is True.
+        selectable (bool): Default is False.
+        height (int): Defines the height of the table and enables a fixed header."""
         tbl_format = kwargs.pop("format", "bootstrap").lower()
         intro = kwargs.pop("intro", "")
         selectable = kwargs.get("selectable", False)
@@ -339,7 +339,7 @@ class MolFrame(object):
             on the Murcko scaffolds of the compounds from ChEMBL 24).<br>'''
             link_col = "Chembl_Id"
             link_templ = "https://www.ebi.ac.uk/chembl/compound/inspect/{}"
-            """
+        """
         tmp = self.add_mols()
         if self.id_col is not None and self.id_col not in self.data.keys():
             self.id_col = None
@@ -1198,9 +1198,9 @@ def drop_cols(df, cols, inplace=False):
 
 def load_resources():
     """Known resources:
-        SMILES,
-        STRUCTURES: containing Mol_b64 column,
-        BATCH, CONTAINER, DATA"""
+    SMILES,
+    STRUCTURES: containing Mol_b64 column,
+    BATCH, CONTAINER, DATA"""
     mf_config = mft.load_config("config")
     global SMILES
     SMILES = mf_config["Paths"]["SmilesPath"]
