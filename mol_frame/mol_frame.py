@@ -966,23 +966,32 @@ class MolFrame(object):
         if not HOLOVIEWS:
             print("* HoloViews not available.")
             return None
-        hover = struct_hover(self, force=force, cols=tooltip)
-        plot_options = {
-            "width": 800,
-            "height": 450,
-            "legend_position": "top_left",
-            "tools": [hover],
-        }
+        molf = self.copy()
+        if isinstance(tooltip, str):
+            tooltip = [tooltip]
+        hover = struct_hover(molf, force=force, cols=tooltip)
+        plot_options = {"width": 800, "height": 500, "tools": [hover]}
         plot_styles = {"size": 8, "cmap": "brg"}
         plot_options.update(options)
         plot_styles.update(styles)
-        vdims = [y, self.id_col, "Image"]
-        if colorby is not None:
-            vdims.append(colorby)
-            plot_options["color_index"] = len(vdims)
+        kdims = [x]
+        vdims = [y, molf.id_col, "Image"]
+        for tt in tooltip:
+            if tt not in vdims:
+                vdims.append(tt)
+        if colorby is None:
+            scatter = hv.Scatter(data=molf.data, kdims=kdims, vdims=vdims, label=title)
+        else:
+            if colorby not in vdims:
+                vdims.append(colorby)
+            molf.data = molf.data.sort_values(colorby)
+            molf.data[colorby] = molf.data[colorby].astype(str)
+            scatter = hv.Scatter(data=molf.data, kdims=kdims, vdims=vdims, label=title)
+            plot_options["legend_position"] = "right"
+            plot_options["toolbar"] = "above"
+            plot_styles["color"] = colorby
         opts = {"Scatter": {"plot": plot_options, "style": plot_styles}}
-        scatter_plot = hv.Scatter(self.data, x, vdims=vdims, label=title)
-        return scatter_plot.opts(opts)
+        return scatter.opts(opts)
 
 
 def groupby(df_in, by=None, num_agg=["median", "mad", "count"], str_agg="unique"):
@@ -1221,8 +1230,6 @@ def struct_hover(mf, force=False, cols=[]):
         print("* HoloViews not available.")
         return None
     mf.add_images(force=force)
-    if isinstance(cols, str):
-        cols = [cols]
     add_cols = []
     for col in cols:
         add_cols.append(
