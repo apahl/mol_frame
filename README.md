@@ -105,13 +105,14 @@ Please also have a look at the `sar_example` notebook in the [tutorials](./tutor
 
 ## Requirements
 The recommended way to install the dependencies is via [conda](https://www.anaconda.com/download/).
-* Python 3 (come on, you can do the switch to 3!)
+* Python 3
 * Jupyter Notebook
 * [RDKit](http://rdkit.org/)
 * [Dask](https://dask.pydata.org/)
 * [HoloViews](http://holoviews.org/) (optionally, used for plotting)
 
-The code is written and tested on Ubuntu 17.04 / 17.10 and Python 3.6 and is intended for use in the Jupyter Notebook.
+The code is written and tested on Ubuntu 20.04 and Python 3.9 and is intended for use in the Jupyter Notebook.  
+It also works in JupyterLab, but the custom javascript progress bars are then not displayed (yes, I probably should have used `tqdm`, but I didn't).
 
 The main class is the MolFrame, which is a wrapper around a Pandas dataframe, exposing all DataFrame methods and extending it with some chemical functionality from the RDKit.  
 The underlying DataFrame is contained in the MolFrame.data object and can always be accessed directly, if necessary.
@@ -126,4 +127,4 @@ Put a file with the extension `.pth`, e.g. `my_packages.pth`, into one of the `s
 (I have the path to a dedicated folder on my machine included in such a .pth file and link all my development projects to that folder. This way, I need to create / modify the .pth file only once.)
 
 ## Disclaimer
-This is work in progress and currently mainly used by one person, compatibility-breaking changes will happen.
+This is work in progress and AFAIA currently mainly used by me, compatibility-breaking changes will happen.
