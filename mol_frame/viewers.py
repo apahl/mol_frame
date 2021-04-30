@@ -112,6 +112,7 @@ def html_grid(
     title="MolFrame",
     drop=[],
     keep=[],
+    hide=[],
     smiles_col="Smiles",
     mol_col="Mol",
     id_col=None,
@@ -156,7 +157,7 @@ def html_grid(
     df = drop_cols(df, drop)
     props = []
     for x in list(df.keys()):
-        if x != mol_col and x != id_col and x != hlsss:
+        if x != mol_col and x != id_col and x != hlsss and (x not in hide):
             props.append(x)
     time_stamp = time.strftime("%y%m%d%H%M%S")
     # td_opt = {"align": "center"}
