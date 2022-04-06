@@ -11,7 +11,7 @@ except ImportError:
 
 def is_interactive_ipython():
     try:
-        get_ipython()
+        get_ipython()  # type: ignore
         ipy = True
         print("> interactive IPython session.")
     except NameError:
