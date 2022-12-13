@@ -17,3 +17,5 @@ branch_info.txt
 commit_msg.txt
 snippets.txt
 tags
+build/
+*.egg-info/

@@ -120,11 +120,26 @@ The underlying DataFrame is contained in the MolFrame.data object and can always
 See the accompanying [Tutorial](tutorials/tutorial1.ipynb) notebook for further examples.
 
 ## Installation
+### Manually (preferred (by me))
 After installing the requirements, clone this repo, then the module can be used by including the project's base directory (mol_frame) in Python's import path (I actually prefer this to using setuptools, because a simple git pull will get you the newest version).
 This can be achieved as follows:
 
 Put a file with the extension `.pth`, e.g. `my_packages.pth`, into one of the `site-packages` directories of your Python installation (e.g. `~/anaconda3/envs/chem/lib/python3.6/site-packages/`) and put the path to the base directory of this project (mol_frame) into it.
 (I have the path to a dedicated folder on my machine included in such a .pth file and link all my development projects to that folder. This way, I need to create / modify the .pth file only once.)
+
+### Setuptools
+Upon request, a `pip`-installable package was also created.  
+
+Either clone the repo, cd into it and issue:
+
+```
+pip install .
+```
+Or install directly from Github:
+
+```
+pip install git+https://github.com/apahl/mol_frame
+```
 
 ## Disclaimer
 This is work in progress and AFAIA currently mainly used by me, compatibility-breaking changes will happen.
