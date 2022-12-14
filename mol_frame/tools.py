@@ -39,7 +39,8 @@ def load_config(conf="config"):
         print("`load_resources()` will not work.")
         print("Have a look at the *.yaml files in the `conf` folder")
         print("for templates and locations.")
-        config = {}
+        print("A default configuration will be used.")
+        config = {"Options": {"UseNewRdkitCoord": True}}
     return config
 
 

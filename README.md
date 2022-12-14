@@ -128,7 +128,7 @@ Put a file with the extension `.pth`, e.g. `my_packages.pth`, into one of the `s
 (I have the path to a dedicated folder on my machine included in such a .pth file and link all my development projects to that folder. This way, I need to create / modify the .pth file only once.)
 
 ### Setuptools
-Upon request, a `pip`-installable package was also created.  
+The package is also `pip`-installable.
 
 Either clone the repo, cd into it and issue:
 
