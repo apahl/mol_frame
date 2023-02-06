@@ -954,8 +954,8 @@ class MolFrame(object):
         x,
         y,
         colorby=None,
+        cmap="category10",
         options={},
-        styles={},
         tooltip=[],
         title="Scatter Plot",
         force=False,
@@ -970,10 +970,16 @@ class MolFrame(object):
         if isinstance(tooltip, str):
             tooltip = [tooltip]
         hover = struct_hover(molf, force=force, cols=tooltip)
-        plot_options = {"width": 800, "height": 500, "tools": [hover]}
-        plot_styles = {"size": 8, "cmap": "brg"}
+        plot_options = {
+            "width": 800,
+            "height": 500,
+            "tools": [hover],
+            "legend_position": "right",
+            "toolbar": "right",
+            "size": 10,
+        }
+        # plot_styles = {"size": 8, "cmap": "brg"}
         plot_options.update(options)
-        plot_styles.update(styles)
         kdims = [x]
         vdims = [y, molf.id_col, "Image"]
         for tt in tooltip:
@@ -987,11 +993,10 @@ class MolFrame(object):
             molf.data = molf.data.sort_values(colorby)
             molf.data[colorby] = molf.data[colorby].astype(str)
             scatter = hv.Scatter(data=molf.data, kdims=kdims, vdims=vdims, label=title)
-            plot_options["legend_position"] = "right"
-            plot_options["toolbar"] = "above"
-            plot_styles["color"] = colorby
-        opts = {"Scatter": {"plot": plot_options, "style": plot_styles}}
-        return scatter.opts(opts)
+            plot_options["color"] = colorby
+            plot_options["cmap"] = cmap
+        # opts = {"Scatter": {"plot": plot_options, "style": plot_styles}}
+        return scatter.options(**plot_options)
 
 
 def groupby(df_in, by=None, num_agg=["median", "mad", "count"], str_agg="unique"):
